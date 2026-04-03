@@ -12,7 +12,7 @@ GitHub Pages site for StarKeep Academy
 │       ├── index.js         # Entry point - registers custom elements
 │       └── components/   
 │           └── customElements.js   # <starkeep-header> and <starkeep-footer>
-├── components/
+├── components/   
 │   ├── header.html          # Nav component fetched at runtime
 │   └── footer.html          # Footer component fetched at runtime
 └── pages/
