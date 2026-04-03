@@ -10,7 +10,7 @@ GitHub Pages site for StarKeep Academy
 │   ├── main.css             # Shared styles (all pages link here)
 │   └── js/
 │       ├── index.js         # Entry point - registers custom elements
-│       └── components/
+│       └── components/   
 │           └── customElements.js   # <starkeep-header> and <starkeep-footer>
 ├── components/
 │   ├── header.html          # Nav component fetched at runtime
