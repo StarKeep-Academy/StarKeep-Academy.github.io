@@ -2,7 +2,7 @@
 
 GitHub Pages site for StarKeep Academy
 
-## Structure
+## Structuree
 
 ```
 ├── index.html               # Homepage
