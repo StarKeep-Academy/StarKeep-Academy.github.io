@@ -3,7 +3,7 @@
 GitHub Pages site for StarKeep Academy
 
 ## Structuree
-
+   
 ```
 ├── index.html               # Homepage
 ├── assets/
