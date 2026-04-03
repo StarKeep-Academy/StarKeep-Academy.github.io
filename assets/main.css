@@ -1,0 +1,235 @@
+/* ================================================================
+   StarKeep Academy — main.css
+   Shared styles loaded by every page.
+   Page-specific styles go in each page's own style.css
+   ================================================================ */
+
+
+/* ===== Reset =====
+   Zero out margins/padding and use border-box sizing everywhere */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+
+/* ===== Design Tokens =====
+   All colours, fonts, and sizing used across the site.
+   Edit here to retheme globally. */
+:root {
+    --bg: #0b0f1e;          /* Main page background (deep navy) */
+    --surface: #131929;     /* Card / header / footer background */
+    --surface-2: #1c2340;   /* Elevated surface (modals, hovers) */
+    --gold: #c9a84c;        /* Brand accent colour */
+    --white: #ffffff;
+    --muted: #8892b0;       /* Secondary text / inactive links */
+    --font: 'Segoe UI', system-ui, sans-serif;
+    --nav-h: 60px;          /* Fixed navbar height — used for padding-top on page-content */
+}
+
+
+/* ===== Base =====
+   defaults for the whole document */
+html { scroll-behavior: smooth; }
+
+body {
+    background-color: var(--bg);
+    color: var(--white);
+    font-family: var(--font);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column; /* Keeps footer pushed to the bottom */
+}
+
+a { color: inherit; text-decoration: none; }
+
+
+/* ===== Buttons ===== */
+
+/* Outlined gold button — default call-to-action */
+.btn {
+    display: inline-block;
+    padding: 0.65rem 1.5rem;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    border-radius: 4px;
+    font-size: 0.9rem;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    background: transparent;
+}
+.btn:hover { background: var(--gold); color: var(--bg); }
+
+/* Solid gold button — stronger emphasis */
+.btn-solid {
+    background: var(--gold);
+    color: var(--bg);
+    border: 1px solid var(--gold);
+    border-radius: 4px;
+    padding: 0.65rem 1.5rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+.btn-solid:hover { opacity: 0.85; }
+
+
+/* ===== Custom Elements =====
+   <starkeep-header> and <starkeep-footer> are inline by default.
+   Force block so they span full width like a normal div. */
+starkeep-header, starkeep-footer { display: block; }
+
+
+/* ===== Header =====
+   Fixed navbar — hides on scroll down, reappears on scroll up or
+   when the mouse moves to the top of the screen (handled in header.html JS) */
+header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    background: rgba(11, 15, 30, 0.92);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid rgba(201, 168, 76, 0.15);
+    transition: transform 0.3s ease;
+}
+
+/* Centred max-width wrapper inside the header.
+   position: relative lets .logo use absolute centering. */
+.nav-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    height: var(--nav-h);
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+
+/* Left nav links — flex: 1 so they take equal space with nav-right,
+   keeping the logo truly centred */
+.nav-left { display: flex; align-items: center; gap: 1.5rem; flex: 1; }
+
+/* Logo — absolutely centred within nav-container */
+.logo {
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--white);
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+.logo span { color: var(--gold); } /* "Keep" accent */
+
+/* Right side — flex: 1 + justify-end pins Login to the far right */
+.nav-right { display: flex; align-items: center; gap: 1.5rem; flex: 1; justify-content: flex-end; }
+
+/* Standard nav link */
+.nav-link {
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    transition: color 0.2s;
+}
+.nav-link:hover, .nav-link.active { color: var(--white); }
+
+/* Login button in the nav */
+.nav-btn {
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.4rem 1rem;
+    border: 1px solid var(--muted);
+    border-radius: 3px;
+    color: var(--muted);
+    transition: border-color 0.2s, color 0.2s;
+}
+.nav-btn:hover { border-color: var(--white); color: var(--white); }
+
+/* Hamburger icon — hidden on desktop, shown on mobile */
+.hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; }
+.bar { width: 22px; height: 2px; background: var(--white); transition: all 0.2s; }
+/* Animate hamburger → X when active */
+.hamburger.active .bar:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.hamburger.active .bar:nth-child(2) { opacity: 0; }
+.hamburger.active .bar:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* Mobile dropdown menu — hidden by default, toggled by hamburger */
+.mobile-menu {
+    display: none;
+    flex-direction: column;
+    padding: 1rem 1.5rem;
+    gap: 1rem;
+    background: var(--surface);
+    border-top: 1px solid rgba(201, 168, 76, 0.1);
+}
+.mobile-menu.active { display: flex; }
+
+
+/* ===== Footer ===== */
+footer {
+    background: var(--surface);
+    border-top: 1px solid rgba(201, 168, 76, 0.15);
+    margin-top: auto; /* Pushes footer to bottom when page content is short */
+}
+
+.footer-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.footer-logo { font-size: 1rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.footer-logo span { color: var(--gold); }
+.footer-tagline { color: var(--muted); font-size: 0.85rem; }
+
+.footer-links { display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap; }
+.footer-links a { font-size: 0.8rem; letter-spacing: 0.05em; color: var(--muted); transition: color 0.2s; }
+.footer-links a:hover { color: var(--white); }
+
+.footer-copy { color: var(--muted); font-size: 0.75rem; }
+
+
+/* ===== Page Layout =====
+   .page-content wraps the <main> on every page.
+   padding-top offsets content below the fixed header. */
+.page-content {
+    padding-top: var(--nav-h);
+    flex: 1; /* Grows to fill remaining height so footer stays at bottom */
+}
+
+/* Full-viewport hero section — used as the default placeholder on each page */
+.hero {
+    min-height: calc(100vh - var(--nav-h));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+    gap: 1.5rem;
+}
+
+.hero h1 {
+    font-size: clamp(2rem, 6vw, 4rem); /* Fluid type - scales with viewport */
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.hero p { max-width: 600px; color: var(--muted); line-height: 1.7; }
+
+/* General-purpose layout helpers */
+.container { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem; }
+.section { padding: 4rem 0; }
+
+
+/* ===== Responsive =====
+   Below 768px: hide desktop nav, show hamburger */
+@media (max-width: 768px) {
+    .nav-left, .nav-right { display: none; }
+    .hamburger { display: flex; }
+}
