@@ -18,6 +18,27 @@
             <h1>Log In</h1>
             <p>Sign in to access your profile and manage your subscription.</p>
         </section>
+
+    <div id="loginArea" class="box">
+        <h1>Log In</h1>
+        <p>Hint: Please use <strong>Username "admin"</strong> and <strong>Password "1234"</strong>.</p>
+
+        <p>Username: <input type="text" value="" id="usernameInput"></p>
+        <p id="error1"></p>
+
+        <p>Password: <input type="text" value="" id="passwordInput"></p>
+        <p id="error2"></p>
+
+        <p id="success"></p>
+        <p><input type="button" value="Sign In" id="loginButton"></p>
+    </div>
+
+    <div id="profileArea" class="box hidden">
+    </div>
+
+    <div id="subscriptionPopup" class="modal-background hidden">
+    </div>
+
     </main>
     <!-- THE FOOTER -->
     <starkeep-footer></starkeep-footer>
