@@ -1,7 +1,7 @@
 // Curriculum page script
 // Data for the details panels (in a real app, this would come from a database or API)
 const pathDetailsData = {
-    '1': { image: 'assets/images/Earthwatcher.png', text: 'You have chosen the Heroic Path of Strength.' },
+    '1': { image: '/assets/images/Earthwatcher.png', text: 'You have chosen the Heroic Path of Strength.' },
     '2': { image: 'path_to_heroic2_img.jpg', text: 'You have chosen the Heroic Path of Valor.' },
     // ... add data for IDs 1-12
     '7': { image: 'path_to_learning1_img.jpg', text: 'You will focus on the Lore of Ancient Civilizations.' },
