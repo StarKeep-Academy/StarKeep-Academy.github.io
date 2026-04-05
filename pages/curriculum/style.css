@@ -96,3 +96,22 @@
     padding: 20px;
     max-width: 800px;
 }
+
+#conpathexp{
+     text-align: justify;
+}
+#contitle{
+    display: flex;
+  margin: 0 25px;
+}
+
+.column1{
+    
+    margin: 0 25px;
+    width: 300px;
+}
+
+.columntext{
+    
+    text-align: justify;
+}
