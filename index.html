@@ -9,12 +9,71 @@
     <script type="module" src="/assets/js/index.js" defer></script>
 </head>
 <body>
-    <!-- THE HEADER -->
-    <!-- <starkeep-header></starkeep-header> -->
+
+    <!-- Planet — fixed half circle at top, driven by scroll JS -->
+    <div id="planet" aria-hidden="true"></div>
+
+    <!--
+        SCROLL TEXTS
+        ─────────────────────────────────────────────────────
+        Add or remove .scroll-text blocks freely.
+        data-duration controls how long a block stays on screen
+        relative to the others. Default is 1. Use 2 for twice
+        as long, 0.5 for half as long, etc.
+        Timing distributes automatically across all blocks.
+        ─────────────────────────────────────────────────────
+    -->
+    <div id="scroll-texts" aria-hidden="true">
+
+        <div class="scroll-text" data-duration="1">
+            <p class="scroll-eyebrow">Welcome to</p>
+            <h2 class="scroll-heading">StarKeep<br>Academy</h2>
+            <p class="scroll-sub">An XR education platform that replaces static learning<br>with a gamified lifestyle of global impact.</p>
+        </div>
+
+        <div class="scroll-text" data-duration="1">
+            <p class="scroll-eyebrow">Our Purpose</p>
+            <h2 class="scroll-heading">Follow your<br>North Star</h2>
+            <p class="scroll-sub">A North Star is a distant but potential reality —<br>a guiding light toward a future we hope to achieve.</p>
+        </div>
+
+        <div class="scroll-text" data-duration="1">
+            <p class="scroll-eyebrow">Who We Are</p>
+            <h2 class="scroll-heading">Starkeepers</h2>
+            <p class="scroll-sub">A collective of dreamers, designers, and innovators<br>who feel the calling to follow their own North Star.</p>
+        </div>
+
+        <div class="scroll-text" data-duration="1">
+            <p class="scroll-eyebrow">How It Works</p>
+            <h2 class="scroll-heading">Design your<br>heroic alter-ego</h2>
+            <p class="scroll-sub">Choose a Heroic Path, build your Avatar, and embark<br>on a curriculum built around real-world impact.</p>
+        </div>
+
+        <div class="scroll-text" data-duration="1">
+            <p class="scroll-eyebrow">Your Journey</p>
+            <h2 class="scroll-heading">Choose your<br>path</h2>
+            <p class="scroll-sub">Every Starkeeper's journey is unique.<br>Yours begins with a single choice.</p>
+        </div>
+
+    </div>
+
+    <!-- Scroll indicator -->
+    <div id="scroll-indicator" aria-hidden="true">
+        <img src="/assets/icons/scroll-down.svg" alt="">
+    </div>
+
+<!-- THE HEADER — hidden off-screen during animation, slides in from below when done -->
+    <starkeep-header></starkeep-header>
     <!--            -->
-    
+
     <main class="page-content">
-        <section class="hero">
+        <!-- Scroll spacer — gives the animation its scrollable height -->
+        <div id="scroll-stage"></div>
+        <!-- Extra scroll room so the lock (progress=1) is reachable -->
+        <div id="scroll-pad"></div>
+
+        <!-- Hero — revealed when animation completes, then locked in place -->
+        <section class="hero" id="hero">
             <h1>StarKeep Academy</h1>
             <p>An XR education platform that replaces static learning with a gamified lifestyle of global impact</p>
             <a href="/pages/curriculum/index.html" class="btn">Choose Your Path</a>
@@ -22,8 +81,8 @@
     </main>
 
     <!-- THE FOOTER -->
-    <starkeep-footer></starkeep-footer>  
-    <!--            -->   
+    <starkeep-footer></starkeep-footer>
+    <!--            -->
 
     <script src="/script.js"></script>
 </body>
