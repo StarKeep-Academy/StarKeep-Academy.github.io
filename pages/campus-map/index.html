@@ -14,11 +14,39 @@
     <!--            -->
 
     <main class="page-content">
-        <section class="hero">
-            <h1>Campus Map</h1>
-            <p>Navigate the World Campus. Find lecture halls, workshops, guild houses, and social areas.</p>
+        <section class="map-section container">
+            <h1 class="map-title">Campus Map</h1>
+
+            <div class="map-layout">
+
+                <!-- Legend -->
+                <aside class="legend">
+                    <p class="legend-title">Legend</p>
+                    <button class="legend-btn" data-type="lecture-hall">Lecture Halls</button>
+                    <button class="legend-btn" data-type="workshop">Workshops</button>
+                    <button class="legend-btn" data-type="guild-house">Guild Houses</button>
+                    <button class="legend-btn" data-type="social-area">Social Areas</button>
+                </aside>
+
+                <!-- Map (grey box placeholder) -->
+                <div class="map-wrapper">
+                    <div class="map-canvas" id="map-canvas">
+                        <!-- nodes injected by script.js -->
+                    </div>
+                </div>
+
+            </div>
         </section>
+
+        <!-- Schedule panel (hidden until a node is clicked) -->
+        <div class="schedule-panel" id="schedule-panel" hidden>
+            <button class="schedule-close" id="schedule-close" aria-label="Close">&times;</button>
+            <h2 class="schedule-location" id="schedule-location"></h2>
+            <p class="schedule-label">Class Schedule</p>
+            <ul class="schedule-list" id="schedule-list"></ul>
+        </div>
     </main>
+
     <!-- THE FOOTER -->
     <starkeep-footer></starkeep-footer>
     <!--            -->

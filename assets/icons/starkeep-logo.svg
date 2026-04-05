@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg
-   viewBox="0 0 260 105"
-   width="260"
+   viewBox="0 0 300 105"
+   width="300"
    height="105"
    version="1.1"
    id="svg7"
@@ -34,45 +34,23 @@
      inkscape:window-y="-8"
      inkscape:window-maximized="1"
      inkscape:current-layer="svg7" />
-  <!-- Background -->
-  <rect
-     x="0"
-     y="0"
-     width="260"
-     height="105"
-     fill="#6e6e6e"
-     rx="4"
-     ry="4"
-     id="rect1" />
-  <!-- Border -->
-  <rect
-     x="6"
-     y="6"
-     width="248"
-     height="93"
-     fill="none"
-     stroke="#8a8a8a"
-     stroke-width="1"
-     rx="2"
-     ry="2"
-     id="rect2" />
   <!-- Top center line -->
-  <line x1="130" y1="-4.6" x2="130" y2="36.72" stroke="#c8a050" stroke-width="1.5" id="line-top-center"/>
+  <line x1="150" y1="-4.6" x2="150" y2="36.72" stroke="#c8a050" stroke-width="1.5" id="line-top-center"/>
   <!-- Top side lines (symmetric ±4.7 from center, same length as bottom) -->
-  <line x1="134.7" y1="13.84" x2="134.7" y2="36.72" stroke="#c8a050" stroke-width="1.5" id="line-top-right"/>
-  <line x1="125.3" y1="13.84" x2="125.3" y2="36.72" stroke="#c8a050" stroke-width="1.5" id="line-top-left"/>
+  <line x1="154.7" y1="13.84" x2="154.7" y2="36.72" stroke="#c8a050" stroke-width="1.5" id="line-top-right"/>
+  <line x1="145.3" y1="13.84" x2="145.3" y2="36.72" stroke="#c8a050" stroke-width="1.5" id="line-top-left"/>
   <!-- Outer outline diamond — top/bottom vertices connect to center lines -->
-  <polygon points="130,36.72 140,46.14 130,55.56 120,46.14" fill="none" stroke="#c8a050" stroke-width="1.2" id="diamond-outline"/>
-  <!-- Inner filled diamond — centered at (130, 46.14), detached from outline -->
-  <polygon points="130,38.5 136.3,46.14 130,53.78 123.7,46.14" fill="#c8a050" id="polygon3"/>
+  <polygon points="150,36.72 160,46.14 150,55.56 140,46.14" fill="none" stroke="#c8a050" stroke-width="1.2" id="diamond-outline"/>
+  <!-- Inner filled diamond — centered at (150, 46.14), detached from outline -->
+  <polygon points="150,38.5 156.3,46.14 150,53.78 143.7,46.14" fill="#c8a050" id="polygon3"/>
   <!-- Bottom center line -->
-  <line x1="130" y1="55.56" x2="130" y2="96.88" stroke="#c8a050" stroke-width="1.5" id="line-bottom-center"/>
+  <line x1="150" y1="55.56" x2="150" y2="96.88" stroke="#c8a050" stroke-width="1.5" id="line-bottom-center"/>
   <!-- Bottom side lines (symmetric ±4.7 from center, same length as top) -->
-  <line x1="134.7" y1="55.56" x2="134.7" y2="78.44" stroke="#c8a050" stroke-width="1.5" id="line-bottom-right"/>
-  <line x1="125.3" y1="55.56" x2="125.3" y2="78.44" stroke="#c8a050" stroke-width="1.5" id="line-bottom-left"/>
+  <line x1="154.7" y1="55.56" x2="154.7" y2="78.44" stroke="#c8a050" stroke-width="1.5" id="line-bottom-right"/>
+  <line x1="145.3" y1="55.56" x2="145.3" y2="78.44" stroke="#c8a050" stroke-width="1.5" id="line-bottom-left"/>
   <!-- "STAR" text -->
   <text
-     x="115.70989"
+     x="135.70989"
      y="60.185112"
      font-family="'Rajdhani', sans-serif"
      font-size="32.594px"
@@ -84,7 +62,7 @@
      style="stroke-width:2.17293">STAR</text>
   <!-- "KEEP" text -->
   <text
-     x="146.60176"
+     x="166.60176"
      y="61.573853"
      font-family="'Rajdhani', sans-serif"
      font-size="32.594px"
@@ -96,7 +74,7 @@
      style="stroke-width:2.17293">KEEP</text>
   <!-- "ACADEMY" text -->
   <text
-     x="131.06569"
+     x="151.06569"
      y="86.793991"
      font-family="'Rajdhani', sans-serif"
      font-size="22.3406px"

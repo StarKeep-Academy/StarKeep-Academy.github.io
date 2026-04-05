@@ -1,1 +1,219 @@
 /* Campus Map page styles */
+
+.map-section {
+    padding: 2rem 1.5rem 4rem;
+}
+
+.map-title {
+    font-size: clamp(1.5rem, 4vw, 2.5rem);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 1.75rem;
+}
+
+/* ===== Layout ===== */
+.map-layout {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+    position: relative;
+}
+
+/* ===== Legend ===== */
+.legend {
+    min-width: 145px;
+    background: var(--surface);
+    border: 1px solid rgba(201, 168, 76, 0.15);
+    border-radius: 6px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.legend-title {
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.25rem;
+}
+
+.legend-btn {
+    background: var(--surface-2);
+    border: 1px solid transparent;
+    color: var(--muted);
+    padding: 0.45rem 0.75rem;
+    border-radius: 3px;
+    font-size: 0.78rem;
+    font-family: var(--font);
+    cursor: pointer;
+    text-align: left;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+
+.legend-btn:hover { color: var(--white); border-color: rgba(255,255,255,0.2); }
+
+.legend-btn.active {
+    background: var(--gold);
+    color: var(--bg);
+    border-color: var(--gold);
+}
+
+/* ===== Map Canvas ===== */
+.map-wrapper { flex: 1; position: relative; }
+
+.map-canvas {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #3a3a3a;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.08);
+    position: relative;
+    overflow: visible;
+}
+
+/* ===== Nodes ===== */
+.map-node {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--gold);
+    border: 2px solid var(--white);
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s, transform 0.15s;
+}
+
+.map-node.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.map-node:hover { transform: translate(-50%, -50%) scale(1.4); }
+
+.map-node.selected {
+    background: var(--white);
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.4);
+}
+
+/* Tooltip */
+.node-tooltip {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface);
+    border: 1px solid var(--gold);
+    color: var(--white);
+    font-size: 0.72rem;
+    font-family: var(--font);
+    padding: 0.25rem 0.65rem;
+    border-radius: 3px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.map-node:hover .node-tooltip { opacity: 1; }
+
+/* ===== Schedule Panel ===== */
+.schedule-panel {
+    position: fixed;
+    top: 50%;
+    right: 1.5rem;
+    transform: translateY(-50%);
+    width: 280px;
+    background: var(--surface);
+    border: 1px solid rgba(201, 168, 76, 0.25);
+    border-radius: 6px;
+    padding: 1.25rem;
+    z-index: 50;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+
+.schedule-panel[hidden] { display: none; }
+
+.schedule-close {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.75rem;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 1.2rem;
+    cursor: pointer;
+    line-height: 1;
+    transition: color 0.2s;
+}
+.schedule-close:hover { color: var(--white); }
+
+.schedule-location {
+    font-size: 0.95rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 0.25rem;
+    padding-right: 1.5rem;
+}
+
+.schedule-label {
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    padding-bottom: 0.6rem;
+}
+
+.schedule-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.schedule-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.schedule-item-name {
+    font-size: 0.82rem;
+    color: var(--white);
+}
+
+.schedule-item-time {
+    font-size: 0.72rem;
+    color: var(--muted);
+}
+
+.enroll-btn {
+    margin-top: 0.2rem;
+    padding: 0.3rem 0.85rem;
+    font-size: 0.72rem;
+    font-family: var(--font);
+    letter-spacing: 0.06em;
+    border-radius: 3px;
+    cursor: pointer;
+    border: 1px solid var(--gold);
+    background: transparent;
+    color: var(--gold);
+    transition: background 0.2s, color 0.2s;
+    align-self: flex-start;
+}
+
+.enroll-btn:hover { background: var(--gold); color: var(--bg); }
+
+.enroll-btn.enrolled {
+    background: var(--gold);
+    color: var(--bg);
+    cursor: default;
+}

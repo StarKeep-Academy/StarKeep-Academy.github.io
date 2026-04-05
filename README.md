@@ -1,41 +1,14 @@
 # StarKeep Academy
 
-GitHub Pages site for StarKeep Academy
+StarKeep Academy is an XR education platform where students design a heroic alter-ego, choose their own learning path, and embark on a personalized curriculum built around real-world impact. Think of it as a school where the goal isn't just to pass exams — it's to change the world.
 
-## Structuree
-   
-```
-├── index.html               # Homepage
-├── assets/
-│   ├── main.css             # Shared styles (all pages link here)
-│   └── js/
-│       ├── index.js         # Entry point - registers custom elements
-│       └── components/   
-│           └── customElements.js   # <starkeep-header> and <starkeep-footer>   
-├── components/   
-│   ├── header.html          # Nav component fetched at runtime
-│   └── footer.html          # Footer component fetched at runtime
-└── pages/
-    ├── curriculum/          # Choose Your Path
-    ├── campus-map/          # World Campus map
-    ├── login/               # Login & subscription
-    └── milestones/          # Milestone slideshow
-```
+This site is the web home of the academy, giving students, parents, and educators a place to explore the curriculum, navigate the virtual World Campus, and track their journey.
 
-## How Components Work
+## Pages
 
-Header and footer are loaded via Custom Elements. Each page includes:
+- **Home** — Introduction to the academy and its mission
+- **Curriculum** — Choose a Heroic Path and a Learning Path to generate your unique Constellation curriculum
+- **Campus Map** — Explore the World Campus: find lecture halls, workshops, guild houses, and social spaces, and enroll in classes
+- **Milestones** — A slideshow guide for educators on how the grading and progression system works
+- **Login** — Sign in and manage your subscription tier
 
-```html
-<starkeep-header></starkeep-header>
-<starkeep-footer></starkeep-footer>
-<script type="module" src="/assets/js/index.js" defer></script>
-```
-
-The JS fetches `components/header.html` and `components/footer.html` and injects them at runtime.
-
-## Adding a New Page
-
-1. Create a folder under `pages/`
-2. Add `index.html`, `script.js`, `style.css`
-3. In `index.html`, link `/assets/main.css`, load `/assets/js/index.js` as a module, and include the two component tags
