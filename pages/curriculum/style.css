@@ -1,18 +1,4 @@
 /* Curriculum page styles */
-body {
-    
-    color: #fff;
-    font-family: 'Space Mono', monospace;
-    margin: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-}
-
-.main-container {
-    text-align: center;
-}
 
 
 
