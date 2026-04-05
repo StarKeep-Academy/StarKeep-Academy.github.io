@@ -1,1 +1,120 @@
 /* Homepage styles */
+
+/* During animation: no padding (hero is a fixed overlay).
+   After anim-done: restore normal header offset. */
+.page-content              { padding-top: 0; }
+.hero                      { min-height: 100vh; }
+body.anim-done .page-content { padding-top: var(--nav-h); }
+
+/* Header: hidden during animation, snaps in when anim-done is added */
+body:not(.anim-done) starkeep-header {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Hero: fixed full-screen overlay that slides up from below.
+   z-index 110 keeps it above the fixed header (z-index 100) so the
+   header space is covered as the page rises — looks like one piece.
+   anim-done removes this rule and hero returns to normal flow. */
+body:not(.anim-done) #hero {
+    position: fixed;
+    inset: 0;
+    z-index: 110;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    padding: 2rem;
+    text-align: center;
+}
+
+/* Planet */
+#planet {
+    position: fixed;
+    left: 50%;
+    top: 0;
+    width: 110vmax;
+    height: 110vmax;
+    border-radius: 50%;
+    background: linear-gradient(to right, #888 50%, #2e2e2e 50%);
+    z-index: 1;
+    pointer-events: none;
+    will-change: transform;
+    transform: translateX(-50%) translateY(-92%);
+}
+
+/* Scroll texts container */
+#scroll-texts {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.scroll-text {
+    position: absolute;
+    left: 50%;
+    top: 55%;
+    width: 90%;
+    max-width: 580px;
+    text-align: center;
+    opacity: 0;
+    will-change: transform, opacity;
+}
+
+.scroll-eyebrow {
+    font-size: 0.7rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.75rem;
+}
+
+.scroll-heading {
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    line-height: 1.15;
+    margin-bottom: 1rem;
+    white-space: pre-line;
+}
+
+.scroll-sub {
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.75;
+}
+
+/* Scroll indicator */
+#scroll-indicator {
+    position: fixed;
+    bottom: 2.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--muted);
+    font-size: 0.62rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    z-index: 10;
+    pointer-events: none;
+}
+
+#scroll-indicator img {
+    width: 32px;
+    height: auto;
+    animation: nudge 2s ease-in-out infinite;
+}
+
+@keyframes nudge {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(5px); }
+}
+
+/* Stage height is set by JS. Pad gives the extra scroll room to reach progress = 1. */
+#scroll-pad { height: 100vh; }
