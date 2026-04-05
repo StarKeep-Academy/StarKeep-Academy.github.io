@@ -5,7 +5,7 @@ registerCustomElements();
 // Generate a sparse random star field using box-shadow on a 1px element.
 // Each shadow is one star at a random viewport position.
 (function spawnStars() {
-    const COUNT = 60; // num of stars
+    const COUNT = 200; // num of stars
     const stars = [];
     for (let i = 0; i < COUNT; i++) {
         const x = Math.round(Math.random() * window.innerWidth);
