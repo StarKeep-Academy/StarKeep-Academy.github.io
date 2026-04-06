@@ -90,7 +90,7 @@
 }
 
 .graph-placeholder {
-    background-color: #ccc;
+    
     margin: 30px auto;
     width: 80%;
     padding: 20px;
@@ -136,4 +136,13 @@
 
 #learning-title{
     text-align: center;
+}
+
+#constellation{
+    max-width: 700px;
+    justify-content: center;
+}
+
+.hidden {
+    display: none !important;
 }

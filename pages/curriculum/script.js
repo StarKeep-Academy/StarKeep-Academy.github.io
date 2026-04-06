@@ -30,6 +30,9 @@ const heroicDetailsText = document.getElementById('heroic-text');
 const learningDetailsImg = document.getElementById('learning-image');
 const learningDetailsText = document.getElementById('learning-text');
 
+const cpath = document.getElementById('constellation')
+const cpathTitle = document.getElementById('pathtitle')
+
 let chosenHeroicPath = null;
 let chosenLearningPath = null;
 
@@ -54,6 +57,24 @@ function updateDetailsPanel(type, pathId) {
         }
     }
 }
+
+function unHide() {
+        if(cpath.classList.contains("hidden")){
+            cpath.classList.remove("hidden");
+        }
+        if(cpathTitle.classList.contains("hidden")){
+            cpathTitle.classList.remove("hidden");
+        }
+            
+        }
+
+function reHide() {
+        if(!cpath.classList.contains("hidden")){
+            cpath.classList.add("hidden");
+        }
+}      
+    
+            
 
 // Function to update the state of the Generate button
 function updateGenerateButton() {
@@ -101,8 +122,36 @@ learningButtons.forEach(button => {
     });
 });
 
-// Event listener for the Generate button (you'll fill this in later)
+// Event listener for the Generate button
 generateBtn.addEventListener('click', () => {
     console.log(`Generate pressed! Heroic: ${chosenHeroicPath}, Learning: ${chosenLearningPath}`);
-    // What you do after they press generate will go here.
+    unHide();
+    if(chosenHeroicPath==1 && chosenLearningPath==10){
+        cpath.src='/assets/images/Earthwatcher.png' ;
+        cpathTitle.textContent= 'The Crisis Responder';
+
+    } else if(chosenHeroicPath==4 && chosenLearningPath==8){
+         cpath.src='/assets/images/Earthwatcher.png' ;
+        cpathTitle.textContent= 'The Deep-Tech Inventor';
+
+    } else if(chosenHeroicPath==2 && chosenLearningPath==9){
+        cpath.src='/assets/images/Earthwatcher.png' ;
+        cpathTitle.textContent= 'The Holistic Haven Builder';
+
+    } else if(chosenHeroicPath==3 && chosenLearningPath==11){
+        cpath.src='/assets/images/Earthwatcher.png' ;
+        cpathTitle.textContent= 'The Empathy Architect';
+
+    } else if(chosenHeroicPath==5 && chosenLearningPath==12){
+        cpath.src='/assets/images/Earthwatcher.png' ;
+        cpathTitle.textContent= 'The Noetic Healer';
+
+    } else if(chosenHeroicPath==6 && chosenLearningPath==7){
+         cpath.src='/assets/images/Earthwatcher.png' ;
+        cpathTitle.textContent= 'The Eco-Systems Architect';
+    } else {
+        reHide();
+        cpathTitle.textContent= 'These paths are incompatible';
+    }
+   
 });
