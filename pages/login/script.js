@@ -89,21 +89,21 @@
             if (this.id==="freeButton") {
                 this.value="Current Plan";              
                 this.disabled=true;    
-                planText.textContent="Current Plan: Free Tier";
+                planText.textContent="Free Tier";
                 freeCol.style.border="3px solid #00FF5E";
             } 
 
             else if (this.id==="proButton") {
                 this.value="Current Plan";              
                 this.disabled=true;    
-                planText.textContent="Current Plan: Pro Tier";
+                planText.textContent="Pro Tier";
                 proCol.style.border="3px solid #00FF5E";
             }
 
             else if (this.id==="premiumButton") {
                 this.value="Current Plan";              
                 this.disabled=true;    
-                planText.textContent="Current Plan: Premium Tier";
+                planText.textContent="Premium Tier";
                 premiumCol.style.border="3px solid #00FF5E";
             }
 

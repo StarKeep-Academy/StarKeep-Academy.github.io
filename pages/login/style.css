@@ -74,7 +74,7 @@
 #profileArea {
     border: 1px solid var(--gold);
     background-color: transparent;   /* Removes any white background */
-    padding: 10.0rem 7.0rem;
+    padding: 7.0rem 7.0rem;
 }
 
 .profile-container {
@@ -126,6 +126,7 @@
     background: var(--surface-2);
     border: 1px solid transparent;
     color: var(--muted);
+    margin-top: 30px;
     padding: 0.45rem 0.75rem;
     border-radius: 3px;
     font-size: 0.78rem;
@@ -236,6 +237,25 @@
 }
 
 #premiumButton:hover { 
+    color: var(--surface-2);
+    background: var(--gold);
+    border-color: var(--gold); 
+}
+
+#closeButton {
+    background: #ccc;
+    border-color: #ccc; 
+    color: var(--surface-2); 
+    padding: 0.45rem 0.75rem;
+    border-radius: 3px;
+    font-size: 0.78rem;
+    font-family: var(--font);
+    cursor: pointer;
+    text-align: left;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+
+#closeButton:hover { 
     color: var(--surface-2);
     background: var(--gold);
     border-color: var(--gold); 
