@@ -14,28 +14,67 @@
     <!--            -->
 
     <main class="page-content">
-        <section class="hero">
+        
+    <section class="hero">
+        <div id="loginArea" class="box">
             <h1>Log In</h1>
-            <p>Sign in to access your profile and manage your subscription.</p>
+            <p>Sign in to access your profile and manage your subscription. <br/>Hint: Please use <strong>Username "admin"</strong> and <strong>Password "1234"</strong>.</p>
 
-    <div id="loginArea" class="box">
-        <p>Hint: Please use <strong>Username "admin"</strong> and <strong>Password "1234"</strong>.</p>
+            <p>Username: <input type="text" value="" id="usernameInput"></p>
+            <p id="error1" style="color: crimson;"></p>
 
-        <p>Username: <input type="text" value="" id="usernameInput"></p>
-        <p id="error1"></p>
+            <p>Password: <input type="text" value="" id="passwordInput"></p>
+            <p id="error2" style="color: crimson;"></p>
 
-        <p>Password: <input type="text" value="" id="passwordInput"></p>
-        <p id="error2"></p>
+            <p id="success"></p>
+            <p><input type="button" value="Sign In" id="loginButton"></p>
+        </div>
 
-        <p id="success"></p>
-        <p><input type="button" value="Sign In" id="loginButton"></p>
-    </div>
+        <div id="profileArea" class="box hidden">
+            <h1>My Profile</h1>
+            <h2>John Doe</h2>
+            <p>Email: john.doe@myemail.com</p>
+            <p id="currentPlanText">Current Plan: Free Tier</p>
+            <input type="button" value="Manage Subscription" id="manageButton">   
+        </div>
 
-    <div id="profileArea" class="box hidden">
-    </div>
+        <div id="subscriptionPopup" class="modal-background hidden">
+            <div class="modal-content">
+            <h2>Upgrade Your Plan</h2>
+            <p>Choose the plan that's right for you.</p>
 
-    <div id="subscriptionPopup" class="modal-background hidden">
-    </div>
+            <div class="three-columns">
+                <div class="column" id="freeColumn">
+                    <h3>Free</h3>
+                    <p>Basic features 1</p>
+                    <p>Basic features 2</p>
+                    <input type="button" value="Current Plan" id="freeButton" disabled>
+                </div>
+
+                <div class="column" id="proColumn">
+                    <h3>Pro</h3>
+                    <p>Includes all Basic features plus:</p>
+                    <p>Pro features 1</p>
+                    <p>Pro features 2</p>
+                    <input type="button" value="Change to Pro" id="proButton">
+                </div>
+
+                <div class="column" id="premiumColumn">
+                    <h3>Premium</h3>
+                    <p>Includes all Pro features plus:</p>
+                    <p>Premium features 1</p>
+                    <p>Premium features 2</p>
+                    <p>Premium features 3</p>
+                    <p>Premium features 4</p>
+                    <input type="button" value="Change to Premium" id="premiumButton">
+                </div>
+            </div>
+
+            <br>
+            <p id="ansbox"></p>
+            <input type="button" value="Cancel / Close" id="closeButton">
+            </div>        
+        </div>
 
     </section>
     </main>

@@ -1,1 +1,40 @@
 /* Login page styles */
+
+.hidden {
+    display: none !important;
+}
+
+/* The dark semi-transparent background that covers the whole screen */
+.modal-background {
+    position: fixed; 
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.5); 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000; /* Ensures the pop-up stays on top of everything else */
+}
+
+/* The white box in the center */
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    width: 600px;
+    text-align: center;
+    color: black;
+}
+
+/* Layout for the 3 plan options */
+.three-columns {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.column {
+    flex: 1; /* Makes all columns stretch to equal widths */
+    border: 1px solid #ddd;
+    padding: 20px;
+    border-radius: 5px;
+}
