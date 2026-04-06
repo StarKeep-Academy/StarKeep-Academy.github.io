@@ -1,10 +1,21 @@
 // Curriculum page script
 // Data for the details panels (in a real app, this would come from a database or API)
 const pathDetailsData = {
-    '1': { image: '/assets/images/Earthwatcher.png', text: 'You have chosen the Heroic Path of Strength.' },
-    '2': { image: 'path_to_heroic2_img.jpg', text: 'You have chosen the Heroic Path of Valor.' },
-    // ... add data for IDs 1-12
-    '7': { image: 'path_to_learning1_img.jpg', text: 'You will focus on the Lore of Ancient Civilizations.' },
+    '1': { image: '/assets/images/Earthwatcher.png', title: 'Earthwatcher', text: 'Driven to protect, cultivate, and organize the Earth\'s ecosystems sustainably and compassionately. Earthwatchers immerse themselves in permaculture, guerrilla gardening, and bio-architecture, whether they are maintaining food forests, building off-grid sustainable communities, or boldly protesting for the environment.' },
+    '2': { image: '/assets/images/Peacebringer.png', title: 'Peacebringer', text: 'Dedicated to healing the world and ending physical, mental, and emotional suffering. Peacebringers operate on the frontlines of empathy, specializing in therapy, naturopathic remedies, pharmaceutical innovation, and conflict mediation, while caring deeply for vulnerable people and animals.' },
+    '3': { image: '/assets/images/Storyteller.png', title: 'Storyteller', text: 'Tasked with envisioning future societies and expressing ideals through art and media. Storytellers inspire action by designing conscious media, impactful music, engaging games, and immersive spaces, effectively forecasting a brighter future and making it irresistible.' },
+    '4': { image: '/assets/images/Innovator.png', title: 'Innovator', text: 'Focused on developing sustainable, eco-friendly technologies that disrupt the status quo for the benefit of the world. Innovators are the architects of tomorrow, diving into robotics engineering, machine learning, clean energy development, and ethical cybersecurity.' },
+    '5': { image: '/assets/images/Dreamwalker.png', title: 'Dreamwalker', text: 'Seekers of empirical evidence in mysticism and deeper understanding regarding the nature of consciousness. Dreamwalkers utilize applied philosophy, esoteric truths, and altered states—such as lucid dreaming and meditation—to acquire abstract wisdom that benefits all life.' },
+    '6': { image: '/assets/images/Truthseeker.png', title: 'Truthseeker', text: 'The interdisciplinary scholars who use imagination, wisdom, and leadership to organize knowledge for world change. Truthseekers master the humanities, ethical philosophy, and the philosophy of science, meticulously archiving resources to design holistic, future-proof communities.' },
+
+    '7': { image: '/assets/images/Scholar.png', title: 'Scholar', text: 'Growing from a strong, diverse foundation of knowledge before branching into specialization. Based in traditional academia, this path involves learning a wide range of liberal arts alongside a major or minor, ensuring a robust, well-rounded intellect.' },
+    '8': { image: '/assets/images/Specialist.png', title: 'Specialist', text: 'Dedicated to surpassing the limits of human potential in one "island of brilliance". Specialists discover personal routines for unlimited growth, pushing the boundaries of advanced techniques in their chosen field while deliberately excluding unrelated subjects.' },
+    '9': { image: '/assets/images/Generalist.png', title: 'Generalist', text: 'Driven to master all subjects and explore infinite paths based on what sparks joy. Generalists embrace customizable daily explorations that cultivate a massive, highly adaptable range of skills, taking breaks from whatever does not inspire them.' },
+    '10': { image: '/assets/images/Wayfinder.png', title: 'Wayfinder', text: 'Focused strictly on meeting the most urgent needs of the world. Wayfinders utilize custom roadmaps designed to make them rapidly competent in specific skill sets required to succeed in areas of crisis and deep humanitarian passion.' },
+    '11': { image: '/assets/images/Divergent.png', title: 'Divergent', text: 'Approaching old problems from radically new angles of experimentation. Divergents thrive on iteration, prototyping, and divergent thinking, exploring interdisciplinary combinations of knowledge, art, and design to spark unexpected innovations.' },
+    '12': { image: '/assets/images/Mystic.png', title: 'Mystic', text: 'Mastering the self and exploring the unknown through the cultivation of intuition. Mystics rely on a receptive flow state, utilizing meditation, mindfulness, and altered states alongside inspirational education to spark abstract ideation and sudden revelations.' }
+    
+    
 };
 
 const heroicButtons = document.querySelectorAll('#heroic-path-group .path-btn');
@@ -12,6 +23,8 @@ const learningButtons = document.querySelectorAll('#learning-path-group .path-bt
 const allButtons = document.querySelectorAll('.path-btn');
 const generateBtn = document.getElementById('generate-btn');
 
+const heroicTitle = document.getElementById('heroic-title');
+const learningTitle = document.getElementById('learning-title');
 const heroicDetailsImg = document.getElementById('heroic-image');
 const heroicDetailsText = document.getElementById('heroic-text');
 const learningDetailsImg = document.getElementById('learning-image');
@@ -25,6 +38,7 @@ function updateDetailsPanel(type, pathId) {
     const data = pathDetailsData[pathId];
     if (type === 'heroic') {
         if (data) {
+            heroicTitle.textContent = data.title;
             heroicDetailsImg.src = data.image;
             heroicDetailsImg.style.display = 'block';
             heroicDetailsText.textContent = data.text;
@@ -32,6 +46,7 @@ function updateDetailsPanel(type, pathId) {
         }
     } else if (type === 'learning') {
         if (data) {
+            learningTitle.textContent = data.title;
             learningDetailsImg.src = data.image;
             learningDetailsImg.style.display = 'block';
             learningDetailsText.textContent = data.text;

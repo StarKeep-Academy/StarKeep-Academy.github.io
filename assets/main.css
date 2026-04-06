@@ -233,7 +233,7 @@ footer {
     text-transform: uppercase;
 }
 
-.hero p { max-width: 600px; color: var(--muted); line-height: 1.7; }
+.hero p { max-width: 800px; color: var(--muted); line-height: 1.7; }
 
 /* General-purpose layout helpers */
 .container { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem; }
