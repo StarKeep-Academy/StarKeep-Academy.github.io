@@ -17,10 +17,11 @@
 
 /* The white box in the center */
 .modal-content {
-    background: white;
+    background: var(--surface-2);
+    border: 1px solid var(--gold);
     padding: 30px;
     border-radius: 8px;
-    width: 600px;
+    width: 800px;
     text-align: center;
     color: black;
 }
@@ -28,13 +29,169 @@
 /* Layout for the 3 plan options */
 .three-columns {
     display: flex;
-    gap: 15px;
-    margin-top: 20px;
+    gap: 20px;
+    margin-top: 50px;
 }
 
 .column {
     flex: 1; /* Makes all columns stretch to equal widths */
-    border: 1px solid #ddd;
+    border: 1px solid var(--gold);
     padding: 20px;
     border-radius: 5px;
+}
+
+#whiteText {
+    color: #dddddd;
+    margin-top: 5px;
+}
+
+#loginArea {
+    border: 1px solid var(--gold);
+    background-color: transparent;   /* Removes any white background */
+    padding: 100px;
+}
+
+.input-area {
+    display: flex;
+    flex-direction: column; 
+    margin-bottom: 15px;
+}
+
+/* Stylize the labels */
+.input-area label {
+    font-size: 18px;
+    font-family: var(--font);
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+}
+
+.input-area input {
+    background-color: #d9d9d9;       /* Light gray block */
+    border: none;                    /* Removes the default HTML border */
+    height: 45px;
+    font-size: 16px;
+    padding: 0 10px;
+    outline: none;                   /* Removes the default blue glow when clicked */
+}
+
+
+#loginButton {
+    background: var(--surface-2);
+    border: 1px solid transparent;
+    color: var(--muted);
+    padding: 0.45rem 0.75rem;
+    border-radius: 3px;
+    font-size: 0.78rem;
+    font-family: var(--font);
+    cursor: pointer;
+    text-align: left;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+
+#loginButton:hover { 
+    color: var(--gold); 
+    border-color: var(--gold); 
+}
+
+#error1 {
+    color: #ff4d4d;
+    text-align: right;
+    font-size: 14px;
+    margin-top: 5px;
+}
+
+#error2 {
+    color: #ff4d4d;
+    text-align: right;
+    font-size: 14px;
+    margin-top: 5px;
+}
+
+#profileArea {
+    border: 1px solid var(--gold);
+    background-color: transparent;   /* Removes any white background */
+    padding: 10.0rem 7.0rem;
+}
+
+#manageButton {
+    background: var(--surface-2);
+    border: 1px solid transparent;
+    color: var(--muted);
+    padding: 0.45rem 0.75rem;
+    border-radius: 3px;
+    font-size: 0.78rem;
+    font-family: var(--font);
+    cursor: pointer;
+    text-align: left;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+
+#manageButton:hover { 
+    color: var(--gold); 
+    border-color: var(--gold); 
+}
+
+#freeButton {
+    background: var(--surface-2);
+    border-color: var(--gold); 
+    color: var(--gold); 
+    padding: 0.45rem 0.75rem;
+    border-radius: 3px;
+    font-size: 0.78rem;
+    font-family: var(--font);
+    cursor: pointer;
+    text-align: left;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+
+#freeButton:hover { 
+    color: var(--surface-2);
+    background: var(--gold);
+    border-color: var(--gold); 
+}
+
+#proButton {
+    background: var(--surface-2);
+    border-color: var(--gold); 
+    color: var(--gold); 
+    padding: 0.45rem 0.75rem;
+    border-radius: 3px;
+    font-size: 0.78rem;
+    font-family: var(--font);
+    cursor: pointer;
+    text-align: left;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+
+#proButton:hover { 
+    color: var(--surface-2);
+    background: var(--gold);
+    border-color: var(--gold); 
+}
+
+#premiumButton {
+    background: var(--surface-2);
+    border-color: var(--gold); 
+    color: var(--gold); 
+    padding: 0.45rem 0.75rem;
+    border-radius: 3px;
+    font-size: 0.78rem;
+    font-family: var(--font);
+    cursor: pointer;
+    text-align: left;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+
+#premiumButton:hover { 
+    color: var(--surface-2);
+    background: var(--gold);
+    border-color: var(--gold); 
+}
+
+
+
+
+.button-group {
+    text-align: center;
+    margin-top: 30px;
 }
