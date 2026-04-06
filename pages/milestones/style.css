@@ -1,1 +1,157 @@
 /* Milestones page styles */
+/* ================================================================
+   Milestones â€” style.css
+   Page-specific styles. All tokens inherited from main.css:
+   --bg, --surface, --gold, --white, --muted, --font, --nav-h
+   ================================================================ */
+
+/* â”€â”€ Section wrapper â”€â”€ */
+.ms-section {
+    padding: 0 0 5rem;
+}
+
+/* â”€â”€ Gold divider between hero and tabs â”€â”€ */
+.ms-divider {
+    width: 60px;
+    height: 1px;
+    background: var(--gold);
+    opacity: 0.5;
+    margin: 0 auto 3rem;
+}
+
+/* â”€â”€ Tab strip â”€â”€ */
+.ms-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 3rem;
+    border-bottom: 1px solid rgba(201, 168, 76, 0.15);
+}
+
+.ms-tab {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    padding: 0.75rem 2.25rem;
+    font-family: var(--font);
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+}
+.ms-tab:hover  { color: var(--white); }
+.ms-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+/* â”€â”€ Panels â”€â”€ */
+.ms-panel { display: none; animation: ms-in 0.3s ease both; }
+.ms-panel.active { display: block; }
+
+@keyframes ms-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* â”€â”€ Two-column grid â”€â”€ */
+.ms-panel-inner {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem 4rem;
+    align-items: center;
+}
+
+@media (max-width: 768px) {
+    .ms-panel-inner { grid-template-columns: 1fr; gap: 2rem; }
+}
+
+/* â”€â”€ Text column â”€â”€ */
+.ms-eyebrow {
+    display: block;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.6rem;
+}
+
+.ms-panel-title {
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 400;
+    color: var(--white);
+    margin: 0 0 1.2rem;
+    line-height: 1.2;
+}
+
+.ms-panel-desc {
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: var(--muted);
+    margin-bottom: 1rem;
+}
+
+.ms-panel-desc strong { color: var(--white); font-weight: 600; }
+
+/* Callout â€” gold left border, same as .btn style */
+.ms-callout {
+    border-left: 1px solid var(--gold);
+    padding: 0.65rem 1rem;
+    background: rgba(201, 168, 76, 0.05);
+    border-radius: 0 4px 4px 0;
+    font-size: 0.85rem;
+    font-style: italic;
+    color: var(--muted);
+    line-height: 1.7;
+    margin-top: 1.5rem;
+}
+
+/* â”€â”€ Image column â”€â”€ */
+.ms-visual {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ms-visual img {
+    width: 100%;
+    max-width: 480px;
+    height: 320px;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+    border: 1px solid rgba(201, 168, 76, 0.2);
+    border-radius: 4px;
+    mask-image: radial-gradient(ellipse 92% 90% at 50% 50%, black 50%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 92% 90% at 50% 50%, black 50%, transparent 100%);
+    filter: brightness(0.88);
+    transition: filter 0.2s, border-color 0.2s;
+}
+.ms-visual img:hover {
+    filter: brightness(1.0);
+    border-color: rgba(201, 168, 76, 0.55);
+}
+
+/* â”€â”€ Step dots â”€â”€ */
+.ms-step-dots {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 3rem;
+}
+
+.ms-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+}
+.ms-dot.active {
+    background: var(--gold);
+    transform: scale(1.5);
+}
