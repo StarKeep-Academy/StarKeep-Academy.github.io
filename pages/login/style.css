@@ -4,6 +4,145 @@
     display: none !important;
 }
 
+/* ---------LOG IN AREA--------- */
+
+#loginArea {
+    border: 1px solid var(--gold);
+    background-color: transparent;   /* Removes any white background */
+    padding: 100px;
+}
+
+.input-area {
+    display: flex;
+    flex-direction: column; 
+    margin-bottom: 15px;
+}
+
+/* Stylize the labels */
+.input-area label {
+    font-size: 16px;
+    font-family: var(--font);
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+    text-align: left;
+}
+
+.input-area input {
+    background-color: #d9d9d9;       /* Light gray block */
+    border: none;                    /* Removes the default HTML border */
+    height: 45px;
+    font-size: 16px;
+    padding: 0 10px;
+    outline: none;                   /* Removes the default blue glow when clicked */
+}
+
+#loginButton {
+    background: var(--surface-2);
+    border: 1px solid transparent;
+    color: var(--muted);
+    padding: 0.45rem 0.75rem;
+    border-radius: 3px;
+    font-size: 0.78rem;
+    font-family: var(--font);
+    cursor: pointer;
+    text-align: left;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+
+#loginButton:hover { 
+    color: var(--gold); 
+    border-color: var(--gold); 
+}
+
+#error1 {
+    color: #ff4d4d;
+    text-align: right;
+    font-size: 14px;
+    margin-top: 5px;
+}
+
+#error2 {
+    color: #ff4d4d;
+    text-align: right;
+    font-size: 14px;
+    margin-top: 5px;
+}
+
+
+/* ---------MY PROFILE AREA--------- */
+
+#profileArea {
+    border: 1px solid var(--gold);
+    background-color: transparent;   /* Removes any white background */
+    padding: 10.0rem 7.0rem;
+}
+
+.profile-container {
+    display: flex;
+    gap: 50px; /* Space between the picture and the form */
+}
+
+.profile-pic-column {
+    flex: 0 0 220px; /* Forces the picture column to stay exactly 220px wide */
+}
+
+.profile-pic-avatar {
+    width: 100%;
+    height: 280px;
+    background-color: #ccc;
+    border-radius: 4px;
+}
+
+.profile-details-col {
+    flex: 1; /* Tells the right column to stretch and fill all remaining space */
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Space between the rows vertically */
+}
+
+
+.profile-input {
+    background-color: transparent;     /* Dark background */
+    border: 0.5px solid var(--gold);
+    color: white;
+    height: 40px;
+    padding: 0 10px;
+    font-size: 16px;
+    width: 100%;
+    box-sizing: border-box;            /* Ensures padding doesn't break the layout */
+}
+
+.input-group {
+    text-align: left;
+    margin-bottom: 6px; /* Overrides the login margin so rows sit tighter */
+}
+
+.input-group-tier {
+    text-align: center;
+    margin-top: 20px;
+}
+
+#manageButton {
+    background: var(--surface-2);
+    border: 1px solid transparent;
+    color: var(--muted);
+    padding: 0.45rem 0.75rem;
+    border-radius: 3px;
+    font-size: 0.78rem;
+    font-family: var(--font);
+    cursor: pointer;
+    text-align: left;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+
+#manageButton:hover { 
+    color: var(--gold); 
+    border-color: var(--gold); 
+}
+
+/* ---------SUBSCRIPTION POP-UP--------- */
+
+
 /* The dark semi-transparent background that covers the whole screen */
 .modal-background {
     position: fixed; 
@@ -43,92 +182,6 @@
 #whiteText {
     color: #dddddd;
     margin-top: 5px;
-}
-
-#loginArea {
-    border: 1px solid var(--gold);
-    background-color: transparent;   /* Removes any white background */
-    padding: 100px;
-}
-
-.input-area {
-    display: flex;
-    flex-direction: column; 
-    margin-bottom: 15px;
-}
-
-/* Stylize the labels */
-.input-area label {
-    font-size: 18px;
-    font-family: var(--font);
-    margin-bottom: 8px;
-    letter-spacing: 1px;
-}
-
-.input-area input {
-    background-color: #d9d9d9;       /* Light gray block */
-    border: none;                    /* Removes the default HTML border */
-    height: 45px;
-    font-size: 16px;
-    padding: 0 10px;
-    outline: none;                   /* Removes the default blue glow when clicked */
-}
-
-
-#loginButton {
-    background: var(--surface-2);
-    border: 1px solid transparent;
-    color: var(--muted);
-    padding: 0.45rem 0.75rem;
-    border-radius: 3px;
-    font-size: 0.78rem;
-    font-family: var(--font);
-    cursor: pointer;
-    text-align: left;
-    transition: color 0.2s, border-color 0.2s, background 0.2s;
-}
-
-#loginButton:hover { 
-    color: var(--gold); 
-    border-color: var(--gold); 
-}
-
-#error1 {
-    color: #ff4d4d;
-    text-align: right;
-    font-size: 14px;
-    margin-top: 5px;
-}
-
-#error2 {
-    color: #ff4d4d;
-    text-align: right;
-    font-size: 14px;
-    margin-top: 5px;
-}
-
-#profileArea {
-    border: 1px solid var(--gold);
-    background-color: transparent;   /* Removes any white background */
-    padding: 10.0rem 7.0rem;
-}
-
-#manageButton {
-    background: var(--surface-2);
-    border: 1px solid transparent;
-    color: var(--muted);
-    padding: 0.45rem 0.75rem;
-    border-radius: 3px;
-    font-size: 0.78rem;
-    font-family: var(--font);
-    cursor: pointer;
-    text-align: left;
-    transition: color 0.2s, border-color 0.2s, background 0.2s;
-}
-
-#manageButton:hover { 
-    color: var(--gold); 
-    border-color: var(--gold); 
 }
 
 #freeButton {
@@ -188,6 +241,7 @@
     border-color: var(--gold); 
 }
 
+/* ---------------------------------- */
 
 
 
