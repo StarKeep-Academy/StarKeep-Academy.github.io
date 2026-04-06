@@ -8,6 +8,7 @@
     align-items: center; /* Center them vertically */
     justify-content: center; /* Center them horizontally */
     margin: 40px 0;
+    max-width: 700px;
 }
 
 .button-group {
@@ -19,12 +20,12 @@
 
 .path-btn {
     background-color: #bbb; /* Base light gray from your image */
-    border: 2px solid transparent; /* Start with no border */
+    border: 4px solid transparent; /* Start with no border */
     padding: 10px;
     cursor: pointer;
     transition: all 0.2s ease-in-out; /* Smooth transitions for effects */
-    width: 80px; /* Example size, adjust as needed */
-    height: 80px;
+    width: 115px; /* Example size, adjust as needed */
+    height: 115px;
 }
 
 /* Base style for the SVGs inside buttons */
@@ -41,7 +42,7 @@
 
 /* Pressed/Active/Chosen State (applied via class in JS) */
 .path-btn.is-active {
-    border-color: #1aff00; /* Bright green border from image */
+    border-color: #c2a212; /* Bright green border from image */
     background-color: #555; /* Darker hue change requested */
 }
 
@@ -52,8 +53,8 @@
 
 /* Divider Styling */
 .divider {
-    width: 3px;
-    height: 160px; /* Should match the total height of the 2x3 grid */
+    width: 5px;
+    height: 230px; /* Should match the total height of the 2x3 grid */
     background-color: #ccc;
     margin: 0 25px; /* Spacing between the groups */
 }
@@ -66,7 +67,7 @@
     margin-bottom: 30px;
 }
 .details-panel {
-    width: 300px; /* Example size */
+    width: 375px; /* Example size */
     text-align: left;
 }
 .details-panel img { max-width: 100%; height: auto; display: none;} /* initially hidden */
@@ -91,9 +92,9 @@
 
 .graph-placeholder {
     
-    margin: 30px auto;
+    
     width: 80%;
-    padding: 20px;
+    
     max-width: 800px;
 }
 
@@ -121,6 +122,10 @@
     text-align: justify;
 }
 
+.hidden {
+    display: none !important;
+}
+
 
 #heroic-text{
     text-align: justify;
@@ -139,10 +144,15 @@
 }
 
 #constellation{
-    max-width: 700px;
+    max-width: 775px;
     justify-content: center;
 }
 
-.hidden {
-    display: none !important;
+#pathtext{
+    text-align: justify;
+    white-space: pre-line;
+    margin: 20px auto;
+    width: 80%;
+    max-width: 775px;
 }
+
