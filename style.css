@@ -39,18 +39,25 @@ body:not(.anim-done) #hero {
     height: 110vmax;
     border-radius: 50%;
     background: linear-gradient(to right, #888 50%, #2e2e2e 50%);
-    z-index: 1;
+    z-index: 110;
     pointer-events: none;
     will-change: transform;
     transform: translateX(-50%) translateY(-92%);
 }
 
+
+#globepic {
+    width:130vmax;
+    align: center;
+}
+
+
 /* Scroll texts container */
 #scroll-texts {
     position: fixed;
     inset: 0;
-    z-index: 10;
-    pointer-events: none;
+    z-index: 160;
+    /*pointer-events: none; Ghosting disabled highlighting + accordion interaction*/
 }
 
 .scroll-text {
@@ -58,7 +65,7 @@ body:not(.anim-done) #hero {
     left: 50%;
     top: 55%;
     width: 90%;
-    max-width: 580px;
+    max-width: 850px;
     text-align: center;
     opacity: 0;
     will-change: transform, opacity;
@@ -83,8 +90,10 @@ body:not(.anim-done) #hero {
 
 .scroll-sub {
     color: var(--muted);
-    font-size: 0.9rem;
+    position: relative;
+    font-size: 1.1rem;
     line-height: 1.75;
+    z-index: 150;
 }
 
 /* Scroll indicator */
@@ -101,8 +110,8 @@ body:not(.anim-done) #hero {
     font-size: 0.62rem;
     letter-spacing: 0.22em;
     text-transform: uppercase;
-    z-index: 10;
-    pointer-events: none;
+    z-index: 170;
+    /*pointer-events: none;*/
 }
 
 #scroll-indicator img {
