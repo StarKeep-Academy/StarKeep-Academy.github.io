@@ -1,31 +1,14 @@
 /* Homepage styles */
 
-/* Header: fixed in place (block component scroll-hide JS), layered above hero but below scroll text */
+/* Header: always on top, blocked from auto-hiding by component JS */
 header { transform: none !important; z-index: 200; }
 
-/* Hero: fixed overlay that slides up from below during the animation.
-   Starts below the header so the header remains visible throughout.
-   anim-done removes this rule and hero returns to normal flow. */
-body:not(.anim-done) #hero {
-    position: fixed;
-    top: var(--nav-h); left: 0; right: 0; bottom: 0;
-    z-index: 150;
-    background: var(--bg);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1.5rem;
-    padding: 2rem;
-    text-align: center;
-}
-
-/* Hide animation elements once the hero has fully arrived */
+/* Hide animation elements once the user has scrolled past them */
 body.anim-done #planet,
 body.anim-done #scroll-texts,
 body.anim-done #scroll-indicator { display: none; }
 
-/* Planet */
+/* Planet — background layer, behind everything */
 #planet {
     position: fixed;
     left: 50%;
@@ -33,7 +16,7 @@ body.anim-done #scroll-indicator { display: none; }
     width: 125vmax;
     height: 125vmax;
     border-radius: 50%;
-    z-index: 400;
+    z-index: 50;
     pointer-events: none;
     will-change: transform;
     transform: translateX(-50%) translateY(-92%);
@@ -44,11 +27,11 @@ body.anim-done #scroll-indicator { display: none; }
     display: block;
 }
 
-/* Scroll texts container */
+/* Scroll texts — above planet, below header */
 #scroll-texts {
     position: fixed;
     inset: 0;
-    z-index: 300;
+    z-index: 150;
     /*pointer-events: none; Ghosting disabled highlighting + accordion interaction*/
 }
 
@@ -85,10 +68,9 @@ body.anim-done #scroll-indicator { display: none; }
     position: relative;
     font-size: 1.1rem;
     line-height: 1.75;
-    z-index: 150;
 }
 
-/* Scroll indicator */
+/* Scroll indicator — same layer as scroll texts */
 #scroll-indicator {
     position: fixed;
     bottom: 2.5rem;
@@ -102,7 +84,7 @@ body.anim-done #scroll-indicator { display: none; }
     font-size: 0.62rem;
     letter-spacing: 0.22em;
     text-transform: uppercase;
-    z-index: 290;
+    z-index: 150;
     /*pointer-events: none;*/
 }
 
@@ -118,3 +100,4 @@ body.anim-done #scroll-indicator { display: none; }
 }
 
 /* Stage height is set by JS — one slot per text block + 2 extra for hero entrance */
+#scroll-pad { height: 100vh; }
