@@ -1,10 +1,6 @@
 /* Homepage styles */
 
-/* Header: always on top, blocked from auto-hiding by component JS */
-header { transform: none !important; z-index: 200; }
-
 /* Hide animation elements once the user has scrolled past them */
-body.anim-done #planet,
 body.anim-done #scroll-texts,
 body.anim-done #scroll-indicator { display: none; }
 
@@ -68,6 +64,32 @@ body.anim-done #scroll-indicator { display: none; }
     position: relative;
     font-size: 1.1rem;
     line-height: 1.75;
+}
+
+.scroll-sub details summary {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    cursor: pointer;
+    list-style: none;
+}
+
+.scroll-sub details summary::-webkit-details-marker { display: none; }
+
+.scroll-sub details summary::before {
+    content: '▶';
+    font-size: 0.65em;
+    flex-shrink: 0;
+    transition: transform 0.2s;
+}
+
+.scroll-sub details[open] summary::before {
+    transform: rotate(90deg);
+}
+
+.scroll-sub details summary h2 {
+    display: inline;
+    margin: 0;
 }
 
 /* Scroll indicator — same layer as scroll texts */

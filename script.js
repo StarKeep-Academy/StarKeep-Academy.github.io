@@ -1,4 +1,6 @@
 // Homepage scroll animation
+history.scrollRestoration = 'manual';
+window.scrollTo(0, 0);
 // Edit .scroll-text blocks in index.html to change content.
 // SCROLL_VH is the only number you need to tune — everything scales from it.
 
@@ -16,9 +18,9 @@ const clamp01 = v => Math.max(0, Math.min(1, v));
 const totalBlocks  = textEls.length;
 stage.style.height = `${SCROLL_VH * (totalBlocks + 2)}vh`;
 
-const TEXT_END = totalBlocks / (totalBlocks + 2);
-const slotW    = TEXT_END / totalBlocks;
-const fadeSpan = slotW * FADE_FRACTION;
+const TEXT_END    = totalBlocks / (totalBlocks + 2);
+const slotW       = TEXT_END / totalBlocks;
+const fadeSpan    = slotW * FADE_FRACTION;
 
 let size = Math.max(window.innerWidth, window.innerHeight) * 1.1;
 
@@ -31,8 +33,10 @@ function update() {
 
     if (indicator) indicator.style.opacity = Math.max(0, 1 - progress * 12);
 
-    const planetY = -(size * 0.92);
-    planet.style.transform = `translateX(-50%) translateY(${planetY}px) rotate(${progress * 360}deg)`;
+    const exitProgress = clamp01((progress - TEXT_END) / (1 - TEXT_END));
+    const planetY = -(size * 0.92) - exitProgress * (size * 0.15);
+    planet.style.transform  = `translateX(-50%) translateY(${planetY}px) rotate(${progress * 360}deg)`;
+    planet.style.visibility = exitProgress >= 1 ? 'hidden' : 'visible';
 
     textEls.forEach((el, i) => {
         const start = i * slotW;

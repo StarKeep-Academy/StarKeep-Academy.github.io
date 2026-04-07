@@ -28,35 +28,5 @@
     </nav>
 </header>
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const header = document.querySelector('header');
-    if (!header || header.hasAttribute('data-nav-initialized')) return;
-    header.setAttribute('data-nav-initialized', 'true');
-
-    const hamburger = header.querySelector('.hamburger');
-    const mobileMenu = header.querySelector('.mobile-menu');
-
-    if (hamburger && mobileMenu) {
-        hamburger.addEventListener('click', function () {
-            hamburger.classList.toggle('active');
-            mobileMenu.classList.toggle('active');
-        });
-    }
-
-    let lastScrollTop = 0;
-    window.addEventListener('scroll', function () {
-        if (window.innerWidth <= 768) return;
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        header.style.transform = scrollTop > lastScrollTop && scrollTop > 80
-            ? 'translateY(-100%)'
-            : 'translateY(0)';
-        lastScrollTop = scrollTop;
-    }, { passive: true });
-
-    window.addEventListener('mousemove', function (e) {
-        if (window.innerWidth <= 768) return;
-        if (e.clientY <= 80) header.style.transform = 'translateY(0)';
-    });
-});
-</script>
+<!-- 
+ -->
