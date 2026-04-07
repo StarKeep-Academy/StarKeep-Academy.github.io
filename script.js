@@ -70,7 +70,8 @@ function update() {
             else                                  opacity = 1;
         }
 
-        el.style.opacity   = opacity;
+        el.style.opacity       = opacity;
+        el.style.pointerEvents = opacity > 0 ? 'auto' : 'none';
         el.style.transform = `translateX(-50%) translateY(calc(-50% + ${60 - local * 120}px))`;
     });
 }
