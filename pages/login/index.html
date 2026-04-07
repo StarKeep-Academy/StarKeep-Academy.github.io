@@ -17,63 +17,113 @@
         
     <section class="hero">
         <div id="loginArea" class="box">
-            <h1>Log In</h1>
-            <p>Sign in to access your profile and manage your subscription. <br/>Hint: Please use <strong>Username "admin"</strong> and <strong>Password "1234"</strong>.</p>
+            <h1 style="padding-top: 50px;">Log In</h1>
+            <p style="margin-top: 30px; margin-bottom: 50px;">Sign in to access your profile and manage your subscription. <br/>Hint: Please use <strong>Username "admin"</strong> and <strong>Password "1234"</strong>.</p>
+            
+            <div class="input-area">
+                <label>Username</label>
+                <input type="text" value="" id="usernameInput">
+                <p id="error1"></p>
+            </div>
 
-            <p>Username: <input type="text" value="" id="usernameInput"></p>
-            <p id="error1" style="color: crimson;"></p>
-
-            <p>Password: <input type="text" value="" id="passwordInput"></p>
-            <p id="error2" style="color: crimson;"></p>
-
+            <div class="input-area">
+                <label>Password</label>
+                <input type="text" value="" id="passwordInput">
+                <p id="error2"></p>
+            </div>
+            
             <p id="success"></p>
-            <p><input type="button" value="Sign In" id="loginButton"></p>
+
+            <div class="button-group">
+                <p><input type="button" value="Sign In" id="loginButton"></p>
+            </div>
+
         </div>
 
         <div id="profileArea" class="box hidden">
             <h1>My Profile</h1>
-            <h2>John Doe</h2>
-            <p>Email: john.doe@myemail.com</p>
-            <p id="currentPlanText">Current Plan: Free Tier</p>
-            <input type="button" value="Manage Subscription" id="manageButton">   
-        </div>
+            <p style="margin-top: 30px; margin-bottom: 50px;">Your Personal Information</strong>.</p>
+            <div class="profile-container">
 
-        <div id="subscriptionPopup" class="modal-background hidden">
-            <div class="modal-content">
-            <h2>Upgrade Your Plan</h2>
-            <p>Choose the plan that's right for you.</p>
-
-            <div class="three-columns">
-                <div class="column" id="freeColumn">
-                    <h3>Free</h3>
-                    <p>Basic features 1</p>
-                    <p>Basic features 2</p>
-                    <input type="button" value="Current Plan" id="freeButton" disabled>
+                <div class="profile-pic-column">
+                    <div class="profile-pic-avatar">
+                    </div>                    
                 </div>
 
-                <div class="column" id="proColumn">
-                    <h3>Pro</h3>
-                    <p>Includes all Basic features plus:</p>
-                    <p>Pro features 1</p>
-                    <p>Pro features 2</p>
-                    <input type="button" value="Change to Pro" id="proButton">
-                </div>
+                <div class="profile-details-col">
+                    <div class="input-group">
+                    <label>First Name</label>
+                        <input type="text" value="John" readonly class="profile-input">
+                    </div>
+                    <div class="input-group">
+                        <label>Last Name</label>
+                        <input type="text" value="Doe" readonly class="profile-input">
+                    </div>
+                    <div class="input-group">
+                        <label>Email</label>
+                        <input type="text" value="john.doe@myemail.com" readonly class="profile-input">
+                    </div>
+                    <div class="input-group">
+                        <label>Address</label>
+                        <input type="text" value="123 Fake Street" readonly class="profile-input">
+                    </div>
 
-                <div class="column" id="premiumColumn">
-                    <h3>Premium</h3>
-                    <p>Includes all Pro features plus:</p>
-                    <p>Premium features 1</p>
-                    <p>Premium features 2</p>
-                    <p>Premium features 3</p>
-                    <p>Premium features 4</p>
-                    <input type="button" value="Change to Premium" id="premiumButton">
-                </div>
+                    <div id="subscriptionPopup" class="modal-background hidden">
+                        <div class="modal-content">
+                        <h2 id="whiteText">Upgrade Your Plan</h2>
+                        <p>Choose the plan that's right for you.</p>
+
+                        <div class="three-columns">
+                            <div class="column" id="freeColumn">
+                                <h3 id="whiteText">Free</h3>
+                                <p><strong>Your FREE version includes the following:</strong></p>
+                                <p>Basic features 1</p>
+                                <p>Basic features 2</p>
+                                <div class="button-group">
+                                    <input type="button" value="Current Plan" id="freeButton" disabled>
+                                </div>
+                            </div>
+
+                            <div class="column" id="proColumn">
+                                <h3 id="whiteText">Pro</h3>
+                                <p><strong>Includes all Basic features plus:</strong></p>
+                                <p>Pro features 1</p>
+                                <p>Pro features 2</p>
+                                <div class="button-group">
+                                    <input type="button" value="Change to Pro" id="proButton">
+                                </div>
+                            </div>
+
+                            <div class="column" id="premiumColumn">
+                                <h3 id="whiteText">Premium</h3>
+                                <p><strong>Includes all Pro features plus:</strong></p>
+                                <p>Premium features 1</p>
+                                <p>Premium features 2</p>
+                                <p>Premium features 3</p>
+                                <p>Premium features 4</p>
+                                <div class="button-group">
+                                    <input type="button" value="Change to Premium" id="premiumButton">
+                                </div>
+                            </div>
+                        </div>
+
+                        <br>
+                        <p id="ansbox"></p>
+                        <input type="button" value="Cancel / Close" id="closeButton">
+                        </div>        
+                    </div> 
+
+                </div>    
             </div>
 
-            <br>
-            <p id="ansbox"></p>
-            <input type="button" value="Cancel / Close" id="closeButton">
-            </div>        
+            <div class="input-group-tier">
+                <label>Current Plan</label>
+                <p id="currentPlanText">Free Tier</p>
+            </div>
+            <div class="button-group">
+                <input type="button" value="Manage Subscription" id="manageButton">  
+            </div>
+
         </div>
 
     </section>

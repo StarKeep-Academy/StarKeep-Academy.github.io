@@ -66,7 +66,7 @@
 
             freeBtn.style.backgroundColor="";
             proBtn.style.backgroundColor="";
-            premiumBtn.style.backgroundColor="";     
+            premiumBtn.style.backgroundColor="";
 
             freeBtn.value="Change to Free"; 
             proBtn.value="Change to Pro";
@@ -82,29 +82,29 @@
             resetPlanStates();
             var ans=document.querySelector("#ansbox");
             ans.textContent="Subscription Updated!";
-            ans.style.color="green";
+            ans.style.color="#00FF5E";
 
             var planText=document.querySelector("#currentPlanText");
 
             if (this.id==="freeButton") {
                 this.value="Current Plan";              
                 this.disabled=true;    
-                planText.textContent="Current Plan: Free Tier";
-                freeCol.style.border="3px solid green";
+                planText.textContent="Free Tier";
+                freeCol.style.border="3px solid #00FF5E";
             } 
 
             else if (this.id==="proButton") {
                 this.value="Current Plan";              
                 this.disabled=true;    
-                planText.textContent="Current Plan: Pro Tier";
-                proCol.style.border="3px solid green";
+                planText.textContent="Pro Tier";
+                proCol.style.border="3px solid #00FF5E";
             }
 
             else if (this.id==="premiumButton") {
                 this.value="Current Plan";              
                 this.disabled=true;    
-                planText.textContent="Current Plan: Premium Tier";
-                premiumCol.style.border="3px solid green";
+                planText.textContent="Premium Tier";
+                premiumCol.style.border="3px solid #00FF5E";
             }
 
         }

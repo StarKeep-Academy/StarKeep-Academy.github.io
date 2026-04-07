@@ -32,6 +32,7 @@ const learningDetailsText = document.getElementById('learning-text');
 
 const cpath = document.getElementById('constellation')
 const cpathTitle = document.getElementById('pathtitle')
+const cpathText = document.getElementById('pathtext')
 
 let chosenHeroicPath = null;
 let chosenLearningPath = null;
@@ -65,6 +66,10 @@ function unHide() {
         if(cpathTitle.classList.contains("hidden")){
             cpathTitle.classList.remove("hidden");
         }
+
+        if(cpathText.classList.contains("hidden")){
+            cpathText.classList.remove("hidden");
+        }
             
         }
 
@@ -72,6 +77,9 @@ function reHide() {
         if(!cpath.classList.contains("hidden")){
             cpath.classList.add("hidden");
         }
+       
+        
+
 }      
     
             
@@ -127,31 +135,38 @@ generateBtn.addEventListener('click', () => {
     console.log(`Generate pressed! Heroic: ${chosenHeroicPath}, Learning: ${chosenLearningPath}`);
     unHide();
     if(chosenHeroicPath==1 && chosenLearningPath==10){
-        cpath.src='/assets/images/Earthwatcher.png' ;
+        cpath.src='/assets/images/TheCrisisResponder.png' ;
         cpathTitle.textContent= 'The Crisis Responder';
+        cpathText.textContent= 'Configuration: Earthwatcher + Wayfinder \n North Star Goal: Rapid deployment of self-sustaining, off-grid permaculture relief camps for climate refugees. \n Structure Logic (The Wayfinder): Urgent, practical, and highly targeted. This path branches moderately to pick up specific tactical skills, then rapidly converges to apply them in the field.';
 
     } else if(chosenHeroicPath==4 && chosenLearningPath==8){
-         cpath.src='/assets/images/Earthwatcher.png' ;
+         cpath.src='/assets/images/TheDeepTechInventor.png' ;
         cpathTitle.textContent= 'The Deep-Tech Inventor';
+        cpathText.textContent= 'Configuration: Innovator + Specialist \n North Star Goal: Inventing a scalable, low-cost ocean microplastic filtration robotics system.\n Structure Logic (The Specialist): The "island of brilliance." Highly linear with almost zero branching. The student dives deeper and deeper into a single, highly technical discipline, deliberately excluding unrelated subjects.';
 
     } else if(chosenHeroicPath==2 && chosenLearningPath==9){
-        cpath.src='/assets/images/Earthwatcher.png' ;
+        cpath.src='/assets/images/TheHolisticHavenBuilder.png' ;
         cpathTitle.textContent= 'The Holistic Haven Builder';
+        cpathText.textContent= 'Configuration: Peacebringer + Generalist \n North Star Goal: Establishing a holistic wellness sanctuary that integrates animal therapy, mental health recovery, and community mediation.\n Structure Logic (The Generalist): Highly branched and wide-ranging. The student explores multiple disconnected topics based on what sparks joy, cultivating a massive toolkit before bringing it all together at the very end.';
 
     } else if(chosenHeroicPath==3 && chosenLearningPath==11){
-        cpath.src='/assets/images/Earthwatcher.png' ;
+        cpath.src='/assets/images/TheEmpathyArchitect.png' ;
         cpathTitle.textContent= 'The Empathy Architect';
+        cpathText.textContent= 'Configuration: Storyteller + Divergent \n North Star Goal: Designing a blockbuster XR (Extended Reality) game that teaches climate stewardship through radical empathy and serious play.\n Structure Logic (The Divergent): Approaching old problems from weird angles. This path branches into seemingly unrelated disciplines (art, tech, science) and forces them to smash together to create unexpected innovations.';
 
     } else if(chosenHeroicPath==5 && chosenLearningPath==12){
-        cpath.src='/assets/images/Earthwatcher.png' ;
+        cpath.src='/assets/images/TheNoeticHealer.png' ;
         cpathTitle.textContent= 'The Noetic Healer';
+        cpathText.textContent= 'Configuration: Dreamwalker + Mystic \n North Star Goal: Mapping altered states of consciousness to develop a scientifically validated, consciousness-based healing modality that integrates esoteric wisdom with empirical research for end-of-life care.\n Structure Logic (The Mystic): Intuitive and reflective. This path relies on flow states, inner mastery, and alternating between experiential practice and abstract academic conception.';
 
     } else if(chosenHeroicPath==6 && chosenLearningPath==7){
-         cpath.src='/assets/images/Earthwatcher.png' ;
+         cpath.src='/assets/images/TheEcoSystemsArchitect.png' ;
         cpathTitle.textContent= 'The Eco-Systems Architect';
+        cpathText.textContent= 'Configuration: Truthseeker + Scholar \n North Star Goal: Designing a future-proof, self-sustaining eco-village that serves as a replicable model for regenerative living.\n Structure Logic (The Scholar): Traditional academic progression. A broad, robust foundation of liberal arts (the "minor") that slowly tapers into a highly focused specialization (the "major").';
     } else {
         reHide();
         cpathTitle.textContent= 'These paths are incompatible';
+        cpathText.textContent= 'Try different combinations of Heroic and Learning paths to discover your unique constellation!';
     }
    
 });
