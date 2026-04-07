@@ -1,25 +1,15 @@
 /* Homepage styles */
 
-/* During animation: no padding (hero is a fixed overlay).
-   After anim-done: restore normal header offset. */
-.page-content              { padding-top: 0; }
-.hero                      { min-height: 100vh; }
-body.anim-done .page-content { padding-top: var(--nav-h); }
+/* Header: fixed in place (block component scroll-hide JS), layered above hero but below scroll text */
+header { transform: none !important; z-index: 200; }
 
-/* Header: hidden during animation, snaps in when anim-done is added */
-body:not(.anim-done) starkeep-header {
-    opacity: 0;
-    pointer-events: none;
-}
-
-/* Hero: fixed full-screen overlay that slides up from below.
-   z-index 110 keeps it above the fixed header (z-index 100) so the
-   header space is covered as the page rises — looks like one piece.
+/* Hero: fixed overlay that slides up from below during the animation.
+   Starts below the header so the header remains visible throughout.
    anim-done removes this rule and hero returns to normal flow. */
 body:not(.anim-done) #hero {
     position: fixed;
-    inset: 0;
-    z-index: 110;
+    top: var(--nav-h); left: 0; right: 0; bottom: 0;
+    z-index: 150;
     background: var(--bg);
     display: flex;
     flex-direction: column;
@@ -30,6 +20,11 @@ body:not(.anim-done) #hero {
     text-align: center;
 }
 
+/* Hide animation elements once the hero has fully arrived */
+body.anim-done #planet,
+body.anim-done #scroll-texts,
+body.anim-done #scroll-indicator { display: none; }
+
 /* Planet */
 #planet {
     position: fixed;
@@ -38,24 +33,22 @@ body:not(.anim-done) #hero {
     width: 125vmax;
     height: 125vmax;
     border-radius: 50%;
-    z-index: 110;
+    z-index: 400;
     pointer-events: none;
     will-change: transform;
     transform: translateX(-50%) translateY(-92%);
 }
-
 
 #globepic {
     width: 100%;
     display: block;
 }
 
-
 /* Scroll texts container */
 #scroll-texts {
     position: fixed;
     inset: 0;
-    z-index: 160;
+    z-index: 300;
     /*pointer-events: none; Ghosting disabled highlighting + accordion interaction*/
 }
 
@@ -109,7 +102,7 @@ body:not(.anim-done) #hero {
     font-size: 0.62rem;
     letter-spacing: 0.22em;
     text-transform: uppercase;
-    z-index: 170;
+    z-index: 290;
     /*pointer-events: none;*/
 }
 
@@ -124,5 +117,4 @@ body:not(.anim-done) #hero {
     50%       { transform: translateY(5px); }
 }
 
-/* Stage height is set by JS. Pad gives the extra scroll room to reach progress = 1. */
-#scroll-pad { height: 100vh; }
+/* Stage height is set by JS — one slot per text block + 2 extra for hero entrance */
