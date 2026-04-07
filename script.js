@@ -29,6 +29,10 @@ function update() {
     const progress = clamp01(scrolled / stage.offsetHeight);
 
     document.body.classList.toggle('anim-done', progress >= 1);
+
+    const header = document.querySelector('header');
+    if (header) header.classList.toggle('header-visible', progress >= 1);
+
     if (progress >= 1) return;
 
     if (indicator) indicator.style.opacity = Math.max(0, 1 - progress * 12);

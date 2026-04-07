@@ -1,7 +1,8 @@
 /* Homepage styles */
 
-/* Header scrolls with the page instead of staying fixed */
-header { position: static; }
+/* Header is fixed but starts hidden; revealed after the scroll animation */
+header { transform: translateY(-100%); }
+header.header-visible { transform: translateY(0); }
 .page-content { padding-top: 0; }
 
 /* Hide animation elements once the user has scrolled past them */
