@@ -35,10 +35,9 @@ body:not(.anim-done) #hero {
     position: fixed;
     left: 50%;
     top: 0;
-    width: 110vmax;
-    height: 110vmax;
+    width: 125vmax;
+    height: 125vmax;
     border-radius: 50%;
-    background: linear-gradient(to right, #888 50%, #2e2e2e 50%);
     z-index: 110;
     pointer-events: none;
     will-change: transform;
@@ -47,8 +46,8 @@ body:not(.anim-done) #hero {
 
 
 #globepic {
-    width:130vmax;
-    align: center;
+    width: 100%;
+    display: block;
 }
 
 
