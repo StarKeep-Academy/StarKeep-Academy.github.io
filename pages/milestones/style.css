@@ -7,8 +7,10 @@
 
 /* ── Page intro ── */
 .ms-intro {
-    padding: 4rem 0 3rem;
-    max-width: 720px;
+    /* padding: 4rem 0 3rem;
+    max-width: 720px; */
+    /* display: flex; */
+    padding: 4rem 0 3rem
 }
 
 .ms-intro-eyebrow {
@@ -17,6 +19,7 @@
     text-transform: uppercase;
     color: var(--gold);
     margin-bottom: 0.75rem;
+    text-align: center;
 }
 
 .ms-intro-title {
@@ -25,6 +28,7 @@
     text-transform: uppercase;
     line-height: 1.15;
     margin-bottom: 1.25rem;
+    text-align: center;
 }
 
 .ms-intro-body {
@@ -70,16 +74,36 @@
     cursor: pointer;
     transition: color 0.2s, border-color 0.2s;
 }
-.ms-tab:hover  { color: var(--white); }
-.ms-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+.ms-tab:hover {
+    color: var(--white);
+}
+
+.ms-tab.active {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+}
 
 /* â”€â”€ Panels â”€â”€ */
-.ms-panel { display: none; animation: ms-in 0.3s ease both; }
-.ms-panel.active { display: block; }
+.ms-panel {
+    display: none;
+    animation: ms-in 0.3s ease both;
+}
+
+.ms-panel.active {
+    display: block;
+}
 
 @keyframes ms-in {
-    from { opacity: 0; transform: translateY(10px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* â”€â”€ Two-column grid â”€â”€ */
@@ -91,7 +115,10 @@
 }
 
 @media (max-width: 768px) {
-    .ms-panel-inner { grid-template-columns: 1fr; gap: 2rem; }
+    .ms-panel-inner {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
 }
 
 /* â”€â”€ Text column â”€â”€ */
@@ -121,7 +148,10 @@
     margin-bottom: 1rem;
 }
 
-.ms-panel-desc strong { color: var(--white); font-weight: 600; }
+.ms-panel-desc strong {
+    color: var(--white);
+    font-weight: 600;
+}
 
 /* Callout â€” gold left border, same as .btn style */
 .ms-callout {
@@ -157,6 +187,7 @@
     filter: brightness(0.88);
     transition: filter 0.2s, border-color 0.2s;
 }
+
 .ms-visual img:hover {
     filter: brightness(1.0);
     border-color: rgba(201, 168, 76, 0.55);
@@ -179,6 +210,7 @@
     cursor: pointer;
     transition: background 0.2s, transform 0.2s;
 }
+
 .ms-dot.active {
     background: var(--gold);
     transform: scale(1.5);
