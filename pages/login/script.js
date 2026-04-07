@@ -82,6 +82,7 @@
             resetPlanStates();
             var ans=document.querySelector("#ansbox");
             ans.textContent="Subscription Updated!";
+            setTimeout(() => { ans.textContent = ""; }, 3000);
             ans.style.color="#00FF5E";
 
             var planText=document.querySelector("#currentPlanText");
