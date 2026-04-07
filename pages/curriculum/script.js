@@ -81,7 +81,8 @@ function reHide() {
         
 
 }      
-    
+
+
             
 
 // Function to update the state of the Generate button
@@ -97,6 +98,9 @@ function updateGenerateButton() {
 function handlePathButtonClick(event, group, type) {
     const clickedButton = event.currentTarget; // The specific button that was clicked
     const pathId = clickedButton.getAttribute('data-path-id');
+    cpath.classList.add("hidden");
+    cpathText.classList.add("hidden");
+    cpathTitle.classList.add("hidden");
 
     // 1. Exclusive Toggle Logic: Turn off all other buttons in this group
     group.forEach(btn => btn.classList.remove('is-active'));
@@ -112,6 +116,7 @@ function handlePathButtonClick(event, group, type) {
         chosenLearningPath = pathId;
         updateDetailsPanel('learning', pathId);
     }
+
 
     // 4. Finally, check if the Generate button can be enabled
     updateGenerateButton();

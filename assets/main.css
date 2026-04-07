@@ -8,7 +8,7 @@
 /* ===== Reset =====
    Zero out margins/padding and use border-box sizing everywhere */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
+@import url('https://fonts.googleapis.com/css2?family=Michroma&display=swap');
 
 /* ===== Design Tokens =====
    All colours, fonts, and sizing used across the site.
@@ -212,6 +212,7 @@ footer {
    padding-top offsets content below the fixed header. */
 .page-content {
     padding-top: var(--nav-h);
+
     flex: 1; /* Grows to fill remaining height so footer stays at bottom */
 }
 
