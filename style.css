@@ -57,7 +57,7 @@ body.anim-done #scroll-indicator { display: none; }
     left: 50%;
     top: 55%;
     width: 90%;
-    max-width: 850px;
+    max-width: 900px;
     text-align: center;
     opacity: 0;
     will-change: transform, opacity;
