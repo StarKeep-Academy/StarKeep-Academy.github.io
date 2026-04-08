@@ -37,66 +37,25 @@ const cpathText = document.getElementById('pathtext'); // p that shows the gener
 let chosenHeroicPath = null; // tracks which heroic button is currently selected (stores its data-path-id), null if none
 let chosenLearningPath = null; // tracks which learning button is currently selected (stores its data-path-id), null if none
 
-function updateDetailsPanel(type, pathId) {
-    const data = pathDetailsData[pathId]; // looks up the title, image, and text for this path id in pathDetailsData
-    if (type === 'heroic') { // called with 'heroic' when a left-side button is clicked
-        if (data) { // only runs if a matching entry exists in pathDetailsData
-            heroicTitle.textContent = data.title; // writes the path name into the heroic title h2
-            heroicDetailsImg.src = data.image; // sets the heroic image src to the path's illustration
-            heroicDetailsImg.style.display = 'block'; // makes the heroic image visible (it starts hidden)
-            heroicDetailsText.textContent = data.text; // writes the path description into the heroic text p
-            heroicDetailsText.style.display = 'block'; // makes the heroic description visible (it starts hidden)
-        }
-    } else if (type === 'learning') { // called with 'learning' when a right-side button is clicked
-        if (data) { // only runs if a matching entry exists in pathDetailsData
-            learningTitle.textContent = data.title; // writes the path name into the learning title h2
-            learningDetailsImg.src = data.image; // sets the learning image src to the path's illustration
-            learningDetailsImg.style.display = 'block'; // makes the learning image visible (it starts hidden)
-            learningDetailsText.textContent = data.text; // writes the path description into the learning text p
-            learningDetailsText.style.display = 'block'; // makes the learning description visible (it starts hidden)
-        }
-    }
-}
 
-function unHide() {
-        if(cpath.classList.contains("hidden")){
-            cpath.classList.remove("hidden");
-        }
-        if(cpathTitle.classList.contains("hidden")){
-            cpathTitle.classList.remove("hidden");
-        }
+// Set up event listeners for both groups
+heroicButtons.forEach(button => {
+    button.addEventListener('click', (event) => {
+        handlePathButtonClick(event, heroicButtons, 'heroic');
+    });
+});
 
-        if(cpathText.classList.contains("hidden")){
-            cpathText.classList.remove("hidden");
-        }
-            
-        }
+learningButtons.forEach(button => {
+    button.addEventListener('click', (event) => {
+        handlePathButtonClick(event, learningButtons, 'learning');
+    });
+});
 
-function reHide() {
-        if(!cpath.classList.contains("hidden")){
-            cpath.classList.add("hidden");
-        }
-       
-        
-
-}      
-
-
-            
-
-// Function to update the state of the Generate button
-function updateGenerateButton() {
-    if (chosenHeroicPath !== null && chosenLearningPath !== null) {
-        generateBtn.disabled = false;
-    } else {
-        generateBtn.disabled = true;
-    }
-}
 
 // Function to handle clicking on ANY path button
 function handlePathButtonClick(event, group, type) {
     const clickedButton = event.currentTarget; // The specific button that was clicked
-    const pathId = clickedButton.getAttribute('data-path-id');
+    const pathId = clickedButton.getAttribute('data-path-id'); // The unique identifier for this path (1-6 for heroic, 7-12 for learning, defined in the HTML as a data attribute line 47-86)
     cpath.classList.add("hidden");
     cpathText.classList.add("hidden");
     cpathTitle.classList.add("hidden");
@@ -121,18 +80,36 @@ function handlePathButtonClick(event, group, type) {
     updateGenerateButton();
 }
 
-// Set up event listeners for both groups
-heroicButtons.forEach(button => {
-    button.addEventListener('click', (event) => {
-        handlePathButtonClick(event, heroicButtons, 'heroic');
-    });
-});
 
-learningButtons.forEach(button => {
-    button.addEventListener('click', (event) => {
-        handlePathButtonClick(event, learningButtons, 'learning');
-    });
-});
+function updateDetailsPanel(type, pathId) {
+    const data = pathDetailsData[pathId]; // looks up the title, image, and text for this path id in pathDetailsData
+    if (type === 'heroic') { // called with 'heroic' when a left-side button is clicked
+        if (data) { // only runs if a matching entry exists in pathDetailsData
+            heroicTitle.textContent = data.title; // writes the path name into the heroic title h2
+            heroicDetailsImg.src = data.image; // sets the heroic image src to the path's illustration
+            heroicDetailsImg.style.display = 'block'; // makes the heroic image visible (it starts hidden)
+            heroicDetailsText.textContent = data.text; // writes the path description into the heroic text p
+            heroicDetailsText.style.display = 'block'; // makes the heroic description visible (it starts hidden)
+        }
+    } else if (type === 'learning') { // called with 'learning' when a right-side button is clicked
+        if (data) { // only runs if a matching entry exists in pathDetailsData
+            learningTitle.textContent = data.title; // writes the path name into the learning title h2
+            learningDetailsImg.src = data.image; // sets the learning image src to the path's illustration
+            learningDetailsImg.style.display = 'block'; // makes the learning image visible (it starts hidden)
+            learningDetailsText.textContent = data.text; // writes the path description into the learning text p
+            learningDetailsText.style.display = 'block'; // makes the learning description visible (it starts hidden)
+        }
+    }
+}
+
+// Function to update the state of the Generate button
+function updateGenerateButton() {
+    if (chosenHeroicPath !== null && chosenLearningPath !== null) {
+        generateBtn.disabled = false;
+    } else {
+        generateBtn.disabled = true;
+    }
+}
 
 // Event listener for the Generate button
 generateBtn.addEventListener('click', () => {
@@ -174,3 +151,24 @@ generateBtn.addEventListener('click', () => {
     }
    
 });
+
+
+function unHide() {
+        if(cpath.classList.contains("hidden")){
+            cpath.classList.remove("hidden");
+        }
+        if(cpathTitle.classList.contains("hidden")){
+            cpathTitle.classList.remove("hidden");
+        }
+
+        if(cpathText.classList.contains("hidden")){
+            cpathText.classList.remove("hidden");
+        }
+            
+}
+
+function reHide() {
+        if(!cpath.classList.contains("hidden")){
+            cpath.classList.add("hidden");
+        }
+}      
