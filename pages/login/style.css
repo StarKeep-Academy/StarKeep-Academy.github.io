@@ -4,11 +4,11 @@
     display: none !important;
 }
 
-/* ---------LOG IN AREA--------- */
+/* ----------------LOG IN AREA----------------- */
 
 #loginArea {
     border: 1px solid var(--gold);
-    background-color: transparent;   /* Removes any white background */
+    background-color: transparent; /* Removes any white background */
     padding: 100px;
 }
 
@@ -28,12 +28,12 @@
 }
 
 .input-area input {
-    background-color: #d9d9d9;       /* Light gray block */
-    border: none;                    /* Removes the default HTML border */
+    background-color: #d9d9d9; /* Light gray block */
+    border: none; /* Removes the default HTML border */
     height: 45px;
     font-size: 16px;
     padding: 0 10px;
-    outline: none;                   /* Removes the default blue glow when clicked */
+    outline: none; /* Removes the default blue glow when clicked */
 }
 
 #loginButton {
@@ -69,11 +69,11 @@
 }
 
 
-/* ---------MY PROFILE AREA--------- */
+/* ---------------MY PROFILE AREA----------------- */
 
 #profileArea {
     border: 1px solid var(--gold);
-    background-color: transparent;   /* Removes any white background */
+    background-color: transparent; /* Removes any white background */
     padding: 7.0rem 7.0rem;
 }
 
@@ -102,14 +102,14 @@
 
 
 .profile-input {
-    background-color: transparent;     /* Dark background */
+    background-color: transparent;
     border: 0.5px solid var(--gold);
     color: white;
     height: 40px;
     padding: 0 10px;
     font-size: 16px;
     width: 100%;
-    box-sizing: border-box;            /* Ensures padding doesn't break the layout */
+    box-sizing: border-box; /* Ensures padding doesn't break the layout */
 }
 
 .input-group {
@@ -155,13 +155,13 @@
     z-index: 1000; /* Ensures the pop-up stays on top of everything else */
 }
 
-/* The white box in the center */
+/* The pop-up box in the center */
 .modal-content {
     background: var(--surface-2);
     border: 1px solid var(--gold);
     padding: 30px;
     border-radius: 8px;
-    width: 800px;
+    width: 1000px;
     text-align: center;
     color: black;
 }
@@ -184,6 +184,9 @@
     color: #dddddd;
     margin-top: 5px;
 }
+
+
+/* ---------BUTTONS STYLING--------- */
 
 #freeButton {
     background: var(--surface-2);
@@ -262,8 +265,6 @@
 }
 
 /* ---------------------------------- */
-
-
 
 .button-group {
     text-align: center;

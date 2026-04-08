@@ -24,7 +24,7 @@
             var closeBtn=document.querySelector("#closeButton");
             closeBtn.addEventListener("click", closePopup);
 
-    // Function: Matching Username and Password before logging in
+    // Function: Match Username and Password before logging in
         function checkLogin() {
             var usernameTyped=document.querySelector("#usernameInput").value;
             var errorText1=document.querySelector("#error1");
@@ -48,7 +48,6 @@
                 errorText2.textContent="Incorrect password";
             }
             else {
-                successText.textContent="IT WORKED!";
                 document.querySelector("#loginArea").classList.add("hidden");
                 document.querySelector("#profileArea").classList.remove("hidden");            
             }
@@ -77,7 +76,7 @@
             premiumBtn.disabled=false;
         }
 
-    // Function to Upgrade subscription
+    // Function to Open Subscription Pop-up
         function whenClicked() {
             resetPlanStates();
             var ans=document.querySelector("#ansbox");
