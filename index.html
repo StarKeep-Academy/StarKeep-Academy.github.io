@@ -3,12 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StarKeep Academy</title>
+    <title>Starkeep Academy</title>
     <link rel="stylesheet" href="/assets/main.css">
     <link rel="stylesheet" href="/style.css">
     <script type="module" src="/assets/js/index.js" defer></script>
 </head>
 <body>
+
+    <!-- THE HEADER — hidden off-screen during animation, slides in from below when done -->
+    <starkeep-header></starkeep-header>
+    <!--            -->
 
     <!-- Planet — fixed half circle at top, driven by scroll JS -->
     <div id="planet" aria-hidden="true">
@@ -98,9 +102,7 @@
         <!-- Extra scroll room so the lock (progress=1) is reachable -->
         <div id="scroll-pad"></div>
 
-       <!-- THE HEADER — hidden off-screen during animation, slides in from below when done -->
-    <starkeep-header></starkeep-header>
-    <!--            -->
+       
         <section class="hero" id="hero">
             <h1>Starkeep Academy</h1>
             <p>An XR education platform that replaces static learning with a gamified lifestyle of global impact</p>

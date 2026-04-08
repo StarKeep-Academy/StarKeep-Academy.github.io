@@ -33,7 +33,7 @@ function update() {
     document.body.classList.toggle('anim-done', progress >= 1); // adds 'anim-done' to body when finished — CSS uses this to hide the scroll texts and indicator
 
     const header = document.querySelector('header'); // grabs the header element injected by the custom element
-    if (header) header.classList.toggle('header-visible', progress >= 1); // slides the header down into view when the animation is done
+    if (header) header.classList.toggle('header-visible', progress >= 0.07); // slides the header down into view when the animation is done
 
     if (progress >= 1) return; // animation is complete — stop here, nothing below needs to run
 
