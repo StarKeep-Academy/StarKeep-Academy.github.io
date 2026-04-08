@@ -6,7 +6,7 @@ window.scrollTo(0, 0); // forces the page to the very top when the script runs, 
 // Edit .scroll-text blocks in index.html to change content.
 // SCROLL_VH is the only number you need to tune — everything scales from it.
 
-const SCROLL_VH     = 120;  // how many vh of scrolling each text block gets — raise to slow down, lower to speed up
+const SCROLL_VH     = 90;  // how many vh of scrolling each text block gets — raise to slow down, lower to speed up
 const FADE_FRACTION = 0.25; // how much of each text block's time is spent fading in or out (0.25 = first and last 25%)
 
 const container = document.getElementById('scroll-texts'); // the div that holds all the scroll text blocks
@@ -20,7 +20,7 @@ const clamp01 = v => Math.max(0, Math.min(1, v)); // keeps any number between 0 
 const totalBlocks  = textEls.length; // how many text blocks there are — used to divide up the scroll timing
 stage.style.height = `${SCROLL_VH * (totalBlocks + 2)}vh`; // sets the stage height — the +2 adds buffer time after the last text fades out
 
-const TEXT_END = totalBlocks / (totalBlocks + 2); // the point in the scroll (0–1) where all texts have finished — planet exit starts here
+const TEXT_END = totalBlocks / (totalBlocks + 0.5); // the point in the scroll (0–1) where all texts have finished — planet exit starts here
 const slotW    = TEXT_END / totalBlocks; // how wide each text block's time slot is as a fraction of the full scroll
 const fadeSpan = slotW * FADE_FRACTION; // how much of each slot is used for fading in or out
 
