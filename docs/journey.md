@@ -58,6 +58,9 @@ It takes an ID string (`"milestones"`, `"stars"`, or `"constellations"`) and:
 
 The event listener is on the whole `<main>` element (event delegation). It checks if the clicked element is a tab (`[data-tab]`) or a dot (`[data-dot]`) and calls `switchTo` with the right ID. This means adding a new tab/panel pair only requires matching HTML — no JS changes needed.
 
+### Keyboard navigation
+`ArrowRight` advances to the next step; `ArrowLeft` goes back. A `STEPS` array defines the order (`milestones → stars → constellations`). `currentIndex()` reads whichever tab has `.active` to know the current position. Navigation stops at either end (no wrapping).
+
 ### To add a new panel
 1. Add a `<button class="ms-tab" data-tab="newid">` in `.ms-tabs`
 2. Add a `<div class="ms-panel" data-panel="newid">` with content

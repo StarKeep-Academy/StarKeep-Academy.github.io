@@ -23,6 +23,13 @@
             .forEach(d => d.classList.toggle('active', d.dataset.dot === id));
     }
 
+    const STEPS = ['milestones', 'stars', 'constellations'];
+
+    function currentIndex() {
+        const active = document.querySelector('.ms-tab.active');
+        return active ? STEPS.indexOf(active.dataset.tab) : 0;
+    }
+
     function init() {
         const main = document.querySelector('main.page-content');
         if (!main) return;
@@ -33,6 +40,16 @@
 
             const dot = e.target.closest('[data-dot]');
             if (dot) switchTo(dot.dataset.dot);
+        });
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'ArrowRight') {
+                const next = STEPS[currentIndex() + 1];
+                if (next) switchTo(next);
+            } else if (e.key === 'ArrowLeft') {
+                const prev = STEPS[currentIndex() - 1];
+                if (prev) switchTo(prev);
+            }
         });
     }
 
