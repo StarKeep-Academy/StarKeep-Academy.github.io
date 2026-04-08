@@ -31,12 +31,31 @@
                 <!-- Map (grey box placeholder) -->
                 <div class="map-wrapper">
                     <div class="map-canvas" id="map-canvas">
+
+                        <!-- Base map image -->
+                        <img class="map-base" src="/assets/images/campusmap_base.jpg" alt="Campus Map">
+
+                        <!-- Zone overlays — SVGs cover the full canvas, each only visible over its area -->
+                        <img class="map-zone" src="/assets/images/campusmap_cloud.svg"    data-name="lorem"     data-info="emsum">
+                        <img class="map-zone" src="/assets/images/campusmap_mountain.svg"   data-name="lorem"     data-info="emsum">
+                        <img class="map-zone" src="/assets/images/campusmap_ocean.svg"      data-name="lorem"     data-info="emsum">
+                        <img class="map-zone" src="/assets/images/campusmap_soul.svg"      data-name="lorem"     data-info="emsum">
+                        <img class="map-zone" src="/assets/images/campusmap_sun.svg"        data-name="lorem"     data-info="emsum">
+                        <img class="map-zone" src="/assets/images/campusmap_unity.svg"     data-name="lorem"     data-info="emsum">
+                        <img class="map-zone" src="/assets/images/campusmap_world.svg"      data-name="lorem"     data-info="emsum">
+
                         <!-- nodes injected by script.js -->
                     </div>
                 </div>
 
             </div>
         </section>
+
+        <!-- Info box — follows cursor on zone hover -->
+        <div class="map-infobox" id="map-infobox">
+            <p class="infobox-name" id="infobox-name"></p>
+            <p class="infobox-desc" id="infobox-desc"></p>
+        </div>
 
         <!-- Schedule panel (hidden until a node is clicked) -->
         <div class="schedule-panel" id="schedule-panel" hidden>
