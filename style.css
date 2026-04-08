@@ -107,5 +107,4 @@ details summary {
     50%       { transform: translateY(5px); }
 }
 
-/* Stage height is set by JS — one slot per text block + 2 extra for hero entrance */
-#scroll-pad { height: 100vh; }
+/* Stage height is set by JS — one slot per text block + 2 extra buffer */

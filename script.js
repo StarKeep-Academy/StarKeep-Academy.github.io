@@ -40,7 +40,6 @@ function update() {
     const exitProgress = clamp01((progress - TEXT_END) / (1 - TEXT_END));
     const planetY = -(size * 0.92) - exitProgress * (size * 0.15);
     planet.style.transform  = `translateX(-50%) translateY(${planetY}px) rotate(${progress * 360}deg)`;
-    planet.style.visibility = exitProgress >= 1 ? 'hidden' : 'visible';
 
     textEls.forEach((el, i) => {
         const start = i * slotW;
