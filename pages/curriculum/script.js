@@ -18,43 +18,42 @@ const pathDetailsData = {
     
 };
 
-const heroicButtons = document.querySelectorAll('#heroic-path-group .path-btn');
-const learningButtons = document.querySelectorAll('#learning-path-group .path-btn');
-const allButtons = document.querySelectorAll('.path-btn');
-const generateBtn = document.getElementById('generate-btn');
+const heroicButtons = document.querySelectorAll('#heroic-path-group .path-btn'); // all 6 buttons in the left (heroic) grid
+const learningButtons = document.querySelectorAll('#learning-path-group .path-btn'); // all 6 buttons in the right (learning) grid
+const allButtons = document.querySelectorAll('.path-btn'); // every path button on the page (both groups combined)
+const generateBtn = document.getElementById('generate-btn'); // the Generate button — disabled until both sides are chosen
 
-const heroicTitle = document.getElementById('heroic-title');
-const learningTitle = document.getElementById('learning-title');
-const heroicDetailsImg = document.getElementById('heroic-image');
-const heroicDetailsText = document.getElementById('heroic-text');
-const learningDetailsImg = document.getElementById('learning-image');
-const learningDetailsText = document.getElementById('learning-text');
+const heroicTitle = document.getElementById('heroic-title'); // h2 that shows the selected heroic path name
+const learningTitle = document.getElementById('learning-title'); // h2 that shows the selected learning path name
+const heroicDetailsImg = document.getElementById('heroic-image'); // img that shows the selected heroic path illustration
+const heroicDetailsText = document.getElementById('heroic-text'); // p that shows the selected heroic path description
+const learningDetailsImg = document.getElementById('learning-image'); // img that shows the selected learning path illustration
+const learningDetailsText = document.getElementById('learning-text'); // p that shows the selected learning path description
 
-const cpath = document.getElementById('constellation')
-const cpathTitle = document.getElementById('pathtitle')
-const cpathText = document.getElementById('pathtext')
+const cpath = document.getElementById('constellation'); // img that shows the generated constellation path diagram
+const cpathTitle = document.getElementById('pathtitle'); // h2 that shows the generated constellation path name
+const cpathText = document.getElementById('pathtext'); // p that shows the generated constellation path description
 
-let chosenHeroicPath = null;
-let chosenLearningPath = null;
+let chosenHeroicPath = null; // tracks which heroic button is currently selected (stores its data-path-id), null if none
+let chosenLearningPath = null; // tracks which learning button is currently selected (stores its data-path-id), null if none
 
-// Function to update the details panel
 function updateDetailsPanel(type, pathId) {
-    const data = pathDetailsData[pathId];
-    if (type === 'heroic') {
-        if (data) {
-            heroicTitle.textContent = data.title;
-            heroicDetailsImg.src = data.image;
-            heroicDetailsImg.style.display = 'block';
-            heroicDetailsText.textContent = data.text;
-            heroicDetailsText.style.display = 'block';
+    const data = pathDetailsData[pathId]; // looks up the title, image, and text for this path id in pathDetailsData
+    if (type === 'heroic') { // called with 'heroic' when a left-side button is clicked
+        if (data) { // only runs if a matching entry exists in pathDetailsData
+            heroicTitle.textContent = data.title; // writes the path name into the heroic title h2
+            heroicDetailsImg.src = data.image; // sets the heroic image src to the path's illustration
+            heroicDetailsImg.style.display = 'block'; // makes the heroic image visible (it starts hidden)
+            heroicDetailsText.textContent = data.text; // writes the path description into the heroic text p
+            heroicDetailsText.style.display = 'block'; // makes the heroic description visible (it starts hidden)
         }
-    } else if (type === 'learning') {
-        if (data) {
-            learningTitle.textContent = data.title;
-            learningDetailsImg.src = data.image;
-            learningDetailsImg.style.display = 'block';
-            learningDetailsText.textContent = data.text;
-            learningDetailsText.style.display = 'block';
+    } else if (type === 'learning') { // called with 'learning' when a right-side button is clicked
+        if (data) { // only runs if a matching entry exists in pathDetailsData
+            learningTitle.textContent = data.title; // writes the path name into the learning title h2
+            learningDetailsImg.src = data.image; // sets the learning image src to the path's illustration
+            learningDetailsImg.style.display = 'block'; // makes the learning image visible (it starts hidden)
+            learningDetailsText.textContent = data.text; // writes the path description into the learning text p
+            learningDetailsText.style.display = 'block'; // makes the learning description visible (it starts hidden)
         }
     }
 }
@@ -111,10 +110,10 @@ function handlePathButtonClick(event, group, type) {
     // 3. Update state variables and dynamic content
     if (type === 'heroic') {
         chosenHeroicPath = pathId;
-        updateDetailsPanel('heroic', pathId);
+        updateDetailsPanel('heroic', pathId); // called from handlePathButtonClick — left side button clicked, pathId is the data-path-id of that button
     } else {
         chosenLearningPath = pathId;
-        updateDetailsPanel('learning', pathId);
+        updateDetailsPanel('learning', pathId); // called from handlePathButtonClick — right side button clicked, pathId is the data-path-id of that button
     }
 
 

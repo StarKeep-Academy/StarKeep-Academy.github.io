@@ -4,9 +4,9 @@
 
 /* Layout for the selection area */
 .path-selection-container {
-    display: flex; /* Use Flexbox for side-by-side elements */
-    align-items: center; /* Center them vertically */
-    justify-content: center; /* Center them horizontally */
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
     margin: 40px 0;
     max-width: 700px;
 }
@@ -53,10 +53,13 @@
 
 /* Divider Styling */
 .divider {
-    width: 5px;
-    height: 230px; /* Should match the total height of the 2x3 grid */
-    background-color: #ccc;
-    margin: 0 25px; /* Spacing between the groups */
+    display: none;
+}
+
+#heroic-path-group {
+    border-right: 5px solid #ccc;
+    padding-right: 25px;
+    margin-right: 25px;
 }
 
 /* Dynamic content panels and Generate button style */
