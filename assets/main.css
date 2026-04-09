@@ -149,24 +149,6 @@ header {
 }
 .nav-btn:hover { border-color: var(--white); color: var(--white); }
 
-/* Hamburger icon — hidden on desktop, shown on mobile */
-.hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; }
-.bar { width: 22px; height: 2px; background: var(--white); transition: all 0.2s; }
-/* Animate hamburger → X when active */
-.hamburger.active .bar:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-.hamburger.active .bar:nth-child(2) { opacity: 0; }
-.hamburger.active .bar:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-
-/* Mobile dropdown menu — hidden by default, toggled by hamburger */
-.mobile-menu {
-    display: none;
-    flex-direction: column;
-    padding: 1rem 1.5rem;
-    gap: 1rem;
-    background: var(--surface);
-    border-top: 1px solid rgba(201, 168, 76, 0.1);
-}
-.mobile-menu.active { display: flex; }
 
 
 /* ===== Footer ===== */
@@ -229,8 +211,11 @@ footer {
 .section { padding: 4rem 0; }
 
 
+<<<<<<< Updated upstream
 /* ===== Responsive ===== */
 @media (max-width: 768px) {
     .nav-left, .nav-right { display: none; }
     .hamburger { display: flex; }
 }
+=======
+>>>>>>> Stashed changes

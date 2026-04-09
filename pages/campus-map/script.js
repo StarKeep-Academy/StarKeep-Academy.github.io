@@ -1,4 +1,3 @@
-// all campus locations — x/y are percentage positions on the map canvas
 const locations = [
     {
         id: 'lh1', type: 'lecture-hall', name: 'Lecture Hall #1',
@@ -60,6 +59,7 @@ const locations = [
     },
 ];
 
+<<<<<<< Updated upstream
 const mapCanvas     = document.getElementById('map-canvas'); 
 const schedulePanel = document.getElementById('schedule-panel'); 
 const scheduleTitle = document.getElementById('schedule-location'); 
@@ -80,10 +80,32 @@ locations.forEach(loc => {
     node.style.top  = `${loc.y}%`; 
 
     const tooltip = document.createElement('span'); 
+=======
+const mapCanvas     = document.getElementById('map-canvas');
+const schedulePanel = document.getElementById('schedule-panel');
+const scheduleTitle = document.getElementById('schedule-location');
+const scheduleList  = document.getElementById('schedule-list');
+const closeBtn      = document.getElementById('schedule-close');
+const legendBtns    = document.querySelectorAll('.legend-btn');
+
+let activeType   = null;
+let selectedNode = null;
+
+locations.forEach(loc => {
+    const node = document.createElement('div');
+    node.className = 'map-node';
+    node.dataset.id   = loc.id;
+    node.dataset.type = loc.type;
+    node.style.left = `${loc.x}%`;
+    node.style.top  = `${loc.y}%`;
+
+    const tooltip = document.createElement('span');
+>>>>>>> Stashed changes
     tooltip.className   = 'node-tooltip';
     tooltip.textContent = loc.name;
     node.appendChild(tooltip);
 
+<<<<<<< Updated upstream
     node.addEventListener('click', () => openSchedule(loc, node)); 
     mapCanvas.appendChild(node);
 });
@@ -103,13 +125,35 @@ legendBtns.forEach(btn => {
 });
 
 
+=======
+    node.addEventListener('click', () => openSchedule(loc, node));
+    mapCanvas.appendChild(node);
+});
+
+const mapNodes = mapCanvas.querySelectorAll('.map-node');
+
+legendBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        const toggling = activeType === btn.dataset.type;
+        legendBtns.forEach(b => b.classList.remove('active'));
+        activeType = toggling ? null : btn.dataset.type;
+        if (!toggling) btn.classList.add('active');
+        filterNodes(activeType);
+        closeSchedulePanel();
+    });
+});
+
+>>>>>>> Stashed changes
 function filterNodes(type) {
     mapNodes.forEach(node => {
         node.classList.toggle('visible', !!type && node.dataset.type === type);
     });
 }
 
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
 function createScheduleItem(cls) {
     const li        = document.createElement('li');
     const nameEl    = document.createElement('span');
@@ -122,21 +166,33 @@ function createScheduleItem(cls) {
     timeEl.className    = 'schedule-item-time';
     timeEl.textContent  = cls.time;
     enrollBtn.className = 'enroll-btn';
+<<<<<<< Updated upstream
     enrollBtn.classList.toggle('enrolled', cls.enrolled); 
+=======
+    enrollBtn.classList.toggle('enrolled', cls.enrolled);
+>>>>>>> Stashed changes
     enrollBtn.textContent = cls.enrolled ? 'Enrolled' : 'Enroll';
 
     if (!cls.enrolled) {
         enrollBtn.addEventListener('click', () => {
+<<<<<<< Updated upstream
             cls.enrolled = true; 
             enrollBtn.textContent = 'Enrolled';
             enrollBtn.classList.add('enrolled');
         }, { once: true }); 
+=======
+            cls.enrolled = true;
+            enrollBtn.textContent = 'Enrolled';
+            enrollBtn.classList.add('enrolled');
+        }, { once: true });
+>>>>>>> Stashed changes
     }
 
     li.append(nameEl, timeEl, enrollBtn);
     return li;
 }
 
+<<<<<<< Updated upstream
 
 function openSchedule(loc, node) {
     if (selectedNode) selectedNode.classList.remove('selected'); 
@@ -150,12 +206,26 @@ function openSchedule(loc, node) {
 }
 
 
+=======
+function openSchedule(loc, node) {
+    if (selectedNode) selectedNode.classList.remove('selected');
+    selectedNode = node;
+    node.classList.add('selected');
+
+    scheduleTitle.textContent = loc.name;
+    scheduleList.innerHTML = '';
+    loc.classes.forEach(cls => scheduleList.appendChild(createScheduleItem(cls)));
+    schedulePanel.hidden = false;
+}
+
+>>>>>>> Stashed changes
 function closeSchedulePanel() {
     schedulePanel.hidden = true;
     if (selectedNode) selectedNode.classList.remove('selected');
     selectedNode = null;
 }
 
+<<<<<<< Updated upstream
 closeBtn.addEventListener('click', closeSchedulePanel); 
 
 // ===== Zone config =====
@@ -184,10 +254,39 @@ document.querySelectorAll('.map-zone').forEach(zone => {
 const infobox  = document.getElementById('map-infobox'); 
 const infoName = document.getElementById('infobox-name'); 
 const infoDesc = document.getElementById('infobox-desc'); 
+=======
+closeBtn.addEventListener('click', closeSchedulePanel);
+
+// SVG overlay positions/sizes as % of map canvas
+const zoneConfig = {
+    cloud:    { x: 59.6, y: 42.3, width: 36.2, height: 50.4 },
+    mountain: { x: 26.9, y: 0,    width: 47.5, height: 37.4 },
+    ocean:    { x: 59.8, y: 10.7, width: 36.3, height: 40.6 },
+    soul:     { x: 0.7,  y: 43.4, width: 41.9, height: 42.4 },
+    sun:      { x: 27.8, y: 60.4, width: 44.3, height: 37.8 },
+    unity:    { x: 31,   y: 21.2, width: 38,   height: 45.8 },
+    world:    { x: 3.6,  y: 12.1, width: 37,   height: 37.2 }
+};
+
+document.querySelectorAll('.map-zone').forEach(zone => {
+    const key = zone.src.match(/campusmap_(\w+)\.svg/)?.[1];
+    const cfg = zoneConfig[key];
+    if (!cfg) return;
+    zone.style.left   = cfg.x      + '%';
+    zone.style.top    = cfg.y      + '%';
+    zone.style.width  = cfg.width  + '%';
+    zone.style.height = cfg.height + '%';
+});
+
+const infobox  = document.getElementById('map-infobox');
+const infoName = document.getElementById('infobox-name');
+const infoDesc = document.getElementById('infobox-desc');
+>>>>>>> Stashed changes
 
 document.querySelectorAll('.map-zone').forEach(zone => {
 
     zone.addEventListener('mouseenter', () => {
+<<<<<<< Updated upstream
         zone.classList.add('hovered'); 
         infoName.textContent = zone.dataset.name; 
         infoDesc.textContent = zone.dataset.info; 
@@ -207,6 +306,27 @@ document.querySelectorAll('.map-zone').forEach(zone => {
     zone.addEventListener('mouseleave', () => {
         zone.classList.remove('hovered'); 
         infobox.classList.remove('visible'); 
+=======
+        zone.classList.add('hovered');
+        infoName.textContent = zone.dataset.name;
+        infoDesc.textContent = zone.dataset.info;
+        infobox.classList.add('visible');
+    });
+
+    zone.addEventListener('mousemove', e => {
+        const offset = 18;
+        const boxW   = infobox.offsetWidth;
+        const boxH   = infobox.offsetHeight;
+        const left   = e.clientX + offset + boxW > window.innerWidth  ? e.clientX - offset - boxW : e.clientX + offset;
+        const top    = e.clientY + offset + boxH > window.innerHeight ? e.clientY - offset - boxH : e.clientY + offset;
+        infobox.style.left = left + 'px';
+        infobox.style.top  = top  + 'px';
+    });
+
+    zone.addEventListener('mouseleave', () => {
+        zone.classList.remove('hovered');
+        infobox.classList.remove('visible');
+>>>>>>> Stashed changes
     });
 
 });
