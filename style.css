@@ -1,15 +1,15 @@
 /* Homepage styles */
 
-/* Header is fixed but starts hidden; revealed after the scroll animation */
+
 header { transform: translateY(-100%); }
 header.header-visible { transform: translateY(0); }
 .page-content { padding-top: 0; }
 
-/* Hide animation elements once the user has scrolled past them */
+
 body.anim-done #scroll-texts,
 body.anim-done #scroll-indicator { display: none; }
 
-/* Planet — background layer, behind everything */
+/* Planet */
 #planet {
     position: fixed;
     left: 50%;
@@ -28,12 +28,12 @@ body.anim-done #scroll-indicator { display: none; }
     display: block;
 }
 
-/* Scroll texts — above planet, below header */
+/* Scroll texts */
 #scroll-texts {
     position: fixed;
     inset: 0;
     z-index: 150;
-    /*pointer-events: none; Ghosting disabled highlighting + accordion interaction*/
+    
 }
 
 .scroll-text {
@@ -78,7 +78,7 @@ details summary {
     cursor: pointer;
 }
 
-/* Scroll indicator — same layer as scroll texts */
+/* Scroll indicator */
 #scroll-indicator {
     position: fixed;
     bottom: 2.5rem;
@@ -93,7 +93,6 @@ details summary {
     letter-spacing: 0.22em;
     text-transform: uppercase;
     z-index: 150;
-    /*pointer-events: none;*/
 }
 
 #scroll-indicator img {
@@ -107,4 +106,4 @@ details summary {
     50%       { transform: translateY(5px); }
 }
 
-/* Stage height is set by JS — one slot per text block + 2 extra buffer */
+

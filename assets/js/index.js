@@ -2,10 +2,8 @@ import { registerCustomElements } from './components/customElements.js';
 
 registerCustomElements();
 
-// Generate a sparse random star field using box-shadow on a 1px element.
-// Each shadow is one star at a random viewport position.
 (function spawnStars() {
-    const COUNT = 200; // num of stars
+    const COUNT = 200;
     const stars = [];
     for (let i = 0; i < COUNT; i++) {
         const x = Math.round(Math.random() * window.innerWidth);
@@ -19,7 +17,6 @@ registerCustomElements();
     document.body.prepend(el);
 }());
 
-// Highlight active nav link
 document.addEventListener('DOMContentLoaded', function () {
     const path = window.location.pathname;
     document.querySelectorAll('.nav-link').forEach(link => {

@@ -12,46 +12,46 @@
 }
 
 .button-group {
-    display: grid; /* Use CSS Grid for the 2x3 grid */
-    grid-template-columns: repeat(3, 1fr); /* 3 columns */
-    grid-template-rows: repeat(2, 1fr); /* 2 rows */
-    gap: 15px; /* Spacing between buttons */
+    display: grid; 
+    grid-template-columns: repeat(3, 1fr); 
+    grid-template-rows: repeat(2, 1fr); 
+    gap: 15px; 
 }
 
 .path-btn {
-    background-color: #434343; /* Base light gray from your image */
-    border: 4px solid transparent; /* Start with no border */
+    background-color: #434343; 
+    border: 4px solid transparent; 
     padding: 10px;
     cursor: pointer;
-    transition: all 0.2s ease-in-out; /* Smooth transitions for effects */
-    width: 115px; /* Example size, adjust as needed */
+    transition: all 0.2s ease-in-out; 
+    width: 115px; 
     height: 115px;
 }
 
-/* Base style for the SVGs inside buttons */
+
 .path-btn svg {
     width: 100%;
     height: 100%;
-    fill: #333; /* Make the icon a darker color on base state */
+    fill: #333; 
 }
 
-/* Hover State */
+
 .path-btn:hover {
-    background-color: #e2e2e2; /* Lighten the button slightly on hover */
+    background-color: #e2e2e2; 
 }
 
-/* Pressed/Active/Chosen State (applied via class in JS) */
+
 .path-btn.is-active {
-    border-color: var(--gold); /* Bright green border from image */
-    background-color: #555; /* Darker hue change requested */
+    border-color: var(--gold); 
+    background-color: #555; 
 }
 
-/* Change the SVG icon color when its button is pressed */
+
 .path-btn.is-active svg {
-    fill: var(--gold); /* Green icon requested */
+    fill: var(--gold); 
 }
 
-/* Divider Styling */
+
 .divider {
     display: none;
 }
@@ -62,7 +62,7 @@
     margin-right: 25px;
 }
 
-/* Dynamic content panels and Generate button style */
+
 .details-container {
     display: flex;
     justify-content: center;
@@ -70,11 +70,11 @@
     margin-bottom: 30px;
 }
 .details-panel {
-    width: 375px; /* Example size */
+    width: 375px; 
     text-align: left;
 }
-.details-panel img { max-width: 100%; height: auto; display: none;} /* initially hidden */
-.details-panel p { display: none; } /* initially hidden */
+.details-panel img { max-width: 100%; height: auto; display: none;} 
+.details-panel p { display: none; } 
 
 .generate-btn {
     background-color: #777;

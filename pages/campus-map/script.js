@@ -60,56 +60,56 @@ const locations = [
     },
 ];
 
-const mapCanvas     = document.getElementById('map-canvas'); // the div the map image and nodes live inside
-const schedulePanel = document.getElementById('schedule-panel'); // the side panel that shows a location's classes
-const scheduleTitle = document.getElementById('schedule-location'); // h2 inside the panel showing the location name
-const scheduleList  = document.getElementById('schedule-list'); // ul inside the panel where class rows are injected
-const closeBtn      = document.getElementById('schedule-close'); // the × button that closes the panel
-const legendBtns    = document.querySelectorAll('.legend-btn'); // the four filter buttons in the legend sidebar
+const mapCanvas     = document.getElementById('map-canvas'); 
+const schedulePanel = document.getElementById('schedule-panel'); 
+const scheduleTitle = document.getElementById('schedule-location'); 
+const scheduleList  = document.getElementById('schedule-list'); 
+const closeBtn      = document.getElementById('schedule-close'); 
+const legendBtns    = document.querySelectorAll('.legend-btn'); 
 
-let activeType   = null; // which location type is currently filtered (null = none active)
-let selectedNode = null; // which node dot is currently selected (null = none)
+let activeType   = null; 
+let selectedNode = null; 
 
-// create a dot node for every location and inject it into the map
+
 locations.forEach(loc => {
-    const node = document.createElement('div'); // the dot element
+    const node = document.createElement('div'); 
     node.className = 'map-node';
-    node.dataset.id   = loc.id; // used to identify the node later
-    node.dataset.type = loc.type; // used by the legend filter to show/hide by category
-    node.style.left = `${loc.x}%`; // horizontal position as % of map width
-    node.style.top  = `${loc.y}%`; // vertical position as % of map height
+    node.dataset.id   = loc.id; 
+    node.dataset.type = loc.type; 
+    node.style.left = `${loc.x}%`; 
+    node.style.top  = `${loc.y}%`; 
 
-    const tooltip = document.createElement('span'); // small label that appears above the dot on hover
+    const tooltip = document.createElement('span'); 
     tooltip.className   = 'node-tooltip';
     tooltip.textContent = loc.name;
     node.appendChild(tooltip);
 
-    node.addEventListener('click', () => openSchedule(loc, node)); // clicking a dot opens the schedule panel
+    node.addEventListener('click', () => openSchedule(loc, node)); 
     mapCanvas.appendChild(node);
 });
 
-const mapNodes = mapCanvas.querySelectorAll('.map-node'); // all dot nodes now in the DOM
+const mapNodes = mapCanvas.querySelectorAll('.map-node'); 
 
-// legend button click — toggles filtering by location type
+
 legendBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-        const toggling = activeType === btn.dataset.type; // true if clicking the already-active button (deselect)
-        legendBtns.forEach(b => b.classList.remove('active')); // clear all active states
-        activeType = toggling ? null : btn.dataset.type; // deselect if already active, otherwise select this type
-        if (!toggling) btn.classList.add('active'); // highlight the clicked button
-        filterNodes(activeType); // show only matching nodes
-        closeSchedulePanel(); // close the panel since the selection changed
+        const toggling = activeType === btn.dataset.type; 
+        legendBtns.forEach(b => b.classList.remove('active')); 
+        activeType = toggling ? null : btn.dataset.type; 
+        if (!toggling) btn.classList.add('active'); 
+        filterNodes(activeType); 
+        closeSchedulePanel(); 
     });
 });
 
-// shows only nodes whose type matches — hides all others
+
 function filterNodes(type) {
     mapNodes.forEach(node => {
         node.classList.toggle('visible', !!type && node.dataset.type === type);
     });
 }
 
-// builds a single class row (name + time + enroll button) for the schedule list
+
 function createScheduleItem(cls) {
     const li        = document.createElement('li');
     const nameEl    = document.createElement('span');
@@ -122,91 +122,91 @@ function createScheduleItem(cls) {
     timeEl.className    = 'schedule-item-time';
     timeEl.textContent  = cls.time;
     enrollBtn.className = 'enroll-btn';
-    enrollBtn.classList.toggle('enrolled', cls.enrolled); // pre-fill enrolled state if already set
+    enrollBtn.classList.toggle('enrolled', cls.enrolled); 
     enrollBtn.textContent = cls.enrolled ? 'Enrolled' : 'Enroll';
 
     if (!cls.enrolled) {
         enrollBtn.addEventListener('click', () => {
-            cls.enrolled = true; // saves state so it persists if the panel is reopened
+            cls.enrolled = true; 
             enrollBtn.textContent = 'Enrolled';
             enrollBtn.classList.add('enrolled');
-        }, { once: true }); // once:true means this listener fires only once and removes itself
+        }, { once: true }); 
     }
 
     li.append(nameEl, timeEl, enrollBtn);
     return li;
 }
 
-// opens the schedule panel for a given location and marks its dot as selected
+
 function openSchedule(loc, node) {
-    if (selectedNode) selectedNode.classList.remove('selected'); // deselect the previous node
+    if (selectedNode) selectedNode.classList.remove('selected'); 
     selectedNode = node;
     node.classList.add('selected');
 
-    scheduleTitle.textContent = loc.name; // set the panel heading
-    scheduleList.innerHTML = ''; // clear previous classes
-    loc.classes.forEach(cls => scheduleList.appendChild(createScheduleItem(cls))); // rebuild the list
-    schedulePanel.hidden = false; // make the panel visible
+    scheduleTitle.textContent = loc.name; 
+    scheduleList.innerHTML = ''; 
+    loc.classes.forEach(cls => scheduleList.appendChild(createScheduleItem(cls))); 
+    schedulePanel.hidden = false; 
 }
 
-// hides the schedule panel and deselects the active node
+
 function closeSchedulePanel() {
     schedulePanel.hidden = true;
     if (selectedNode) selectedNode.classList.remove('selected');
     selectedNode = null;
 }
 
-closeBtn.addEventListener('click', closeSchedulePanel); // × button closes the panel
+closeBtn.addEventListener('click', closeSchedulePanel); 
 
-// ===== Zone config — position and size of each SVG overlay (all values are % of map canvas) =====
+// ===== Zone config =====
 const zoneConfig = {
-    cloud:    { x: 59.6, y: 42.3, width: 36.2, height: 50.4 }, // bottom-right area
-    mountain: { x: 26.9, y: 0,    width: 47.5, height: 37.4 }, // top-center area
-    ocean:    { x: 59.8, y: 10.7, width: 36.3, height: 40.6 }, // top-right area
-    soul:     { x: 0.7,  y: 43.4, width: 41.9, height: 42.4 }, // left area
-    sun:      { x: 27.8, y: 60.4, width: 44.3, height: 37.8 }, // bottom-center area
-    unity:    { x: 31,   y: 21.2, width: 38,   height: 45.8 }, // center area
-    world:    { x: 3.6,  y: 12.1, width: 37,   height: 37.2 }, // top-left area
+    cloud:    { x: 59.6, y: 42.3, width: 36.2, height: 50.4 }, 
+    mountain: { x: 26.9, y: 0,    width: 47.5, height: 37.4 }, 
+    ocean:    { x: 59.8, y: 10.7, width: 36.3, height: 40.6 }, 
+    soul:     { x: 0.7,  y: 43.4, width: 41.9, height: 42.4 }, 
+    sun:      { x: 27.8, y: 60.4, width: 44.3, height: 37.8 }, 
+    unity:    { x: 31,   y: 21.2, width: 38,   height: 45.8 }, 
+    world:    { x: 3.6,  y: 12.1, width: 37,   height: 37.2 }, 
 };
 
-// reads each zone's config and applies it as inline CSS — this is what actually moves and sizes the SVGs on screen
+
 document.querySelectorAll('.map-zone').forEach(zone => {
-    const key = zone.src.match(/campusmap_(\w+)\.svg/)?.[1]; // extract the zone name from the svg filename e.g. "cloud" from "campusmap_cloud.svg"
-    const cfg = zoneConfig[key]; // look up that zone's config object
-    if (!cfg) return; // skip if no config found for this zone
-    zone.style.left   = cfg.x      + '%'; // horizontal position from the left edge of the map
-    zone.style.top    = cfg.y      + '%'; // vertical position from the top edge of the map
-    zone.style.width  = cfg.width  + '%'; // width as a percentage of the map width
-    zone.style.height = cfg.height + '%'; // height as a percentage of the map height
+    const key = zone.src.match(/campusmap_(\w+)\.svg/)?.[1]; 
+    const cfg = zoneConfig[key]; 
+    if (!cfg) return; 
+    zone.style.left   = cfg.x      + '%'; 
+    zone.style.top    = cfg.y      + '%'; 
+    zone.style.width  = cfg.width  + '%'; 
+    zone.style.height = cfg.height + '%'; 
 });
 
-// ===== Zone hover — lights up the zone and shows the info box next to the cursor =====
-const infobox  = document.getElementById('map-infobox'); // the floating info box element
-const infoName = document.getElementById('infobox-name'); // name line inside the info box
-const infoDesc = document.getElementById('infobox-desc'); // description line inside the info box
+// ===== Zone hover =====
+const infobox  = document.getElementById('map-infobox'); 
+const infoName = document.getElementById('infobox-name'); 
+const infoDesc = document.getElementById('infobox-desc'); 
 
 document.querySelectorAll('.map-zone').forEach(zone => {
 
     zone.addEventListener('mouseenter', () => {
-        zone.classList.add('hovered'); // adds the hovered class which CSS transitions opacity from 0 to 1
-        infoName.textContent = zone.dataset.name; // fills in the zone name from its data-name attribute in the HTML
-        infoDesc.textContent = zone.dataset.info; // fills in the zone description from its data-info attribute in the HTML
-        infobox.classList.add('visible'); // makes the info box appear
+        zone.classList.add('hovered'); 
+        infoName.textContent = zone.dataset.name; 
+        infoDesc.textContent = zone.dataset.info; 
+        infobox.classList.add('visible'); 
     });
 
     zone.addEventListener('mousemove', e => {
-        const offset = 18; // px gap between the cursor tip and the nearest edge of the info box
-        const boxW   = infobox.offsetWidth; // current rendered width of the info box
-        const boxH   = infobox.offsetHeight; // current rendered height of the info box
-        const left   = e.clientX + offset + boxW > window.innerWidth  ? e.clientX - offset - boxW : e.clientX + offset; // place right of cursor, flip left if it would go off-screen
-        const top    = e.clientY + offset + boxH > window.innerHeight ? e.clientY - offset - boxH : e.clientY + offset; // place below cursor, flip up if it would go off-screen
-        infobox.style.left = left + 'px'; // move the info box to follow the cursor horizontally
-        infobox.style.top  = top  + 'px'; // move the info box to follow the cursor vertically
+        const offset = 18; 
+        const boxW   = infobox.offsetWidth; 
+        const boxH   = infobox.offsetHeight; 
+        const left   = e.clientX + offset + boxW > window.innerWidth  ? e.clientX - offset - boxW : e.clientX + offset; 
+        const top    = e.clientY + offset + boxH > window.innerHeight ? e.clientY - offset - boxH : e.clientY + offset; 
+        infobox.style.left = left + 'px'; 
+        infobox.style.top  = top  + 'px'; 
     });
 
     zone.addEventListener('mouseleave', () => {
-        zone.classList.remove('hovered'); // removes hovered class — CSS transitions opacity back to 0
-        infobox.classList.remove('visible'); // hides the info box
+        zone.classList.remove('hovered'); 
+        infobox.classList.remove('visible'); 
     });
 
 });

@@ -8,7 +8,7 @@
 
 #loginArea {
     border: 1px solid var(--gold);
-    background-color: transparent; /* Removes any white background */
+    background-color: transparent; 
     padding: 100px;
 }
 
@@ -18,7 +18,6 @@
     margin-bottom: 15px;
 }
 
-/* Stylize the labels */
 .input-area label {
     font-size: 16px;
     font-family: var(--font);
@@ -28,12 +27,12 @@
 }
 
 .input-area input {
-    background-color: #d9d9d9; /* Light gray block */
-    border: none; /* Removes the default HTML border */
+    background-color: #d9d9d9; 
+    border: none; 
     height: 45px;
     font-size: 16px;
     padding: 0 10px;
-    outline: none; /* Removes the default blue glow when clicked */
+    outline: none; 
 }
 
 #loginButton {
@@ -73,17 +72,17 @@
 
 #profileArea {
     border: 1px solid var(--gold);
-    background-color: transparent; /* Removes any white background */
+    background-color: transparent; 
     padding: 7.0rem 7.0rem;
 }
 
 .profile-container {
     display: flex;
-    gap: 50px; /* Space between the picture and the form */
+    gap: 50px; 
 }
 
 .profile-pic-column {
-    flex: 0 0 220px; /* Forces the picture column to stay exactly 220px wide */
+    flex: 0 0 220px; 
 }
 
 .profile-pic-avatar {
@@ -94,10 +93,10 @@
 }
 
 .profile-details-col {
-    flex: 1; /* Tells the right column to stretch and fill all remaining space */
+    flex: 1; 
     display: flex;
     flex-direction: column;
-    gap: 15px; /* Space between the rows vertically */
+    gap: 15px; 
 }
 
 
@@ -109,12 +108,12 @@
     padding: 0 10px;
     font-size: 16px;
     width: 100%;
-    box-sizing: border-box; /* Ensures padding doesn't break the layout */
+    box-sizing: border-box; 
 }
 
 .input-group {
     text-align: left;
-    margin-bottom: 6px; /* Overrides the login margin so rows sit tighter */
+    margin-bottom: 6px; 
 }
 
 .input-group-tier {
@@ -144,7 +143,6 @@
 /* ---------SUBSCRIPTION POP-UP--------- */
 
 
-/* The dark semi-transparent background that covers the whole screen */
 .modal-background {
     position: fixed; 
     top: 0; left: 0; right: 0; bottom: 0;
@@ -152,10 +150,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000; /* Ensures the pop-up stays on top of everything else */
+    z-index: 1000; 
 }
 
-/* The pop-up box in the center */
 .modal-content {
     background: var(--surface-2);
     border: 1px solid var(--gold);
@@ -170,7 +167,6 @@
     text-align: center;
 }
 
-/* Layout for the 3 plan options */
 .three-columns {
     display: flex;
     gap: 20px;
@@ -178,7 +174,7 @@
 }
 
 .column {
-    flex: 1; /* Makes all columns stretch to equal widths */
+    flex: 1; 
     border: 1px solid var(--gold);
     padding: 20px;
     border-radius: 5px;
