@@ -28,12 +28,11 @@
             var errorText2=document.querySelector("#error2");
 
 
-    // Function: Match Username and Password before logging in
+    // Login
         function checkLogin() {
             var usernameTyped=document.querySelector("#usernameInput").value;
             var passwordTyped=document.querySelector("#passwordInput").value;
 
-        // Clearing error message when Login button is clicked again
             errorText1.textContent = "";
             errorText2.textContent = "";
 
@@ -53,7 +52,7 @@
             }
         }
 
-    // Function to SHOW the popup
+    // SHOW Pop-up
         function showPopup() {
             document.querySelector("#subscriptionPopup").classList.remove("hidden");
         }
@@ -76,7 +75,7 @@
             premiumBtn.disabled=false;
         }
 
-    // Function to Open Subscription Pop-up
+    // Subscription Pop-up
         function whenClicked() {
             resetPlanStates();
             var ans=document.querySelector("#ansbox");
@@ -109,7 +108,7 @@
 
         }
 
-    // Function to CLOSE the popup
+    // CLOSE Pop-up
         function closePopup() {
             document.querySelector("#subscriptionPopup").classList.add("hidden");
         }
