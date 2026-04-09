@@ -31,12 +31,31 @@
                 <!-- Map (grey box placeholder) -->
                 <div class="map-wrapper">
                     <div class="map-canvas" id="map-canvas">
+
+                        <!-- Base map image -->
+                        <img class="map-base" src="/assets/images/campusmap_base.jpg" alt="Campus Map">
+
+                        <!-- Zone overlays — SVGs cover the full canvas, each only visible over its area -->
+                        <img class="map-zone" src="/assets/images/campusmap_cloud.svg"    data-name="Cloud Campus"     data-info="A high-altitude domain built for boundless imagination. With open-air digital studios, it focuses on Visual Art, Storytelling, Game Design, and 3D Animation. It is the natural home of the Storyteller, empowering students to design the aesthetics of a better world.">
+                        <img class="map-zone" src="/assets/images/campusmap_mountain.svg"   data-name="Mountain Campus"     data-info="A grounded, natural sanctuary dedicated to the physical world. Here, students immerse themselves in Biology, Ecology, Permaculture, and Bio-Architecture. It serves as a living laboratory for Sustainable Living and Environmental Activism , heavily populated by students walking the Earthwatcher path.">
+                        <img class="map-zone" src="/assets/images/campusmap_ocean.svg"      data-name="Ocean Campus"     data-info="A restorative environment designed around the principles of care and empathy. This campus houses expansive virtual facilities for Medicine, Mental Health, and Animal Sanctuaries. It is the primary training ground for the Peacebringer path, focusing on alleviating suffering and promoting holistic wellness.">
+                        <img class="map-zone" src="/assets/images/campusmap_soul.svg"      data-name="Soul Campus"     data-info="An ethereal, contemplative space dedicated to the inner world. This campus invites deep exploration into Consciousness, Noetic Science, Philosophy, and Mysticism. It is a haven for the Dreamwalker, designed to facilitate applied metaphysics and abstract understanding.">
+                        <img class="map-zone" src="/assets/images/campusmap_sun.svg"        data-name="Sun Campus"     data-info="A futuristic incubator buzzing with technological advancement. Students here push the boundaries of Science, Engineering, Robotics, and Sustainable Energy. As the primary laboratory of the Innovator path, it is where eco-friendly solutions and XR technologies are prototyped and brought to life.">
+                        <img class="map-zone" src="/assets/images/campusmap_unity.svg"     data-name="Unity Campus"     data-info="The central, beating heart of the city. Regardless of their chosen path, all Starkeepers gather here to prepare for the Hero Exams, study Hero Ethics, and access the boundless wisdom of The Infinite Library.">
+                        <img class="map-zone" src="/assets/images/campusmap_world.svg"      data-name="World Campus"     data-info="The great civic and intellectual hub of the Academy. Designed like a grand forum, it hosts Interdisciplinary Studies and the Humanities—from Anthropology and Law to History and Sociology. It attracts the Truthseeker, fostering vast knowledge and the wisdom needed for systemic world change.">
+
                         <!-- nodes injected by script.js -->
                     </div>
                 </div>
 
             </div>
         </section>
+
+        <!-- Info box — follows cursor on zone hover -->
+        <div class="map-infobox" id="map-infobox">
+            <p class="infobox-name" id="infobox-name"></p>
+            <p class="infobox-desc" id="infobox-desc"></p>
+        </div>
 
         <!-- Schedule panel (hidden until a node is clicked) -->
         <div class="schedule-panel" id="schedule-panel" hidden>

@@ -67,11 +67,65 @@
 .map-canvas {
     width: 100%;
     aspect-ratio: 16 / 9;
-    background: #3a3a3a;
     border-radius: 6px;
     border: 1px solid rgba(255,255,255,0.08);
     position: relative;
-    overflow: visible;
+    overflow: hidden;
+}
+
+/* Base map image — fills the canvas */
+.map-base {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Zone SVGs — position and size are set per-zone by zoneConfig in script.js */
+.map-zone {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    transition: opacity 0.2s ease, filter 0.2s ease;
+    pointer-events: visiblePainted; /* only fires on visible non-transparent pixels */
+}
+
+.map-zone.hovered {
+    opacity: 1;
+    filter: drop-shadow(0 0 10px var(--gold)) brightness(1.2);
+}
+
+/* Info box — fixed so it can follow the cursor anywhere */
+.map-infobox {
+    display: none;
+    position: fixed;
+    background: var(--surface);
+    border: 1px solid var(--gold);
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    max-width: 220px;
+    pointer-events: none;
+    z-index: 200;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+
+.map-infobox.visible { display: block; }
+
+.infobox-name {
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.4rem;
+}
+
+.infobox-desc {
+    font-size: 0.78rem;
+    color: var(--muted);
+    line-height: 1.55;
 }
 
 /* ===== Nodes ===== */
