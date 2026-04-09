@@ -158,29 +158,55 @@ function closeSchedulePanel() {
 
 closeBtn.addEventListener('click', closeSchedulePanel); // × button closes the panel
 
-// ===== Zone hover — info box follows the cursor =====
+// ===== Zone config — position and size of each SVG overlay (all values are % of map canvas) =====
+const zoneConfig = {
+    cloud:    { x: 59.6, y: 42.3, width: 36.2, height: 50.4 }, // bottom-right area
+    mountain: { x: 26.9, y: 0,    width: 47.5, height: 37.4 }, // top-center area
+    ocean:    { x: 59.8, y: 10.7, width: 36.3, height: 40.6 }, // top-right area
+    soul:     { x: 0.7,  y: 43.4, width: 41.9, height: 42.4 }, // left area
+    sun:      { x: 27.8, y: 60.4, width: 44.3, height: 37.8 }, // bottom-center area
+    unity:    { x: 31,   y: 21.2, width: 38,   height: 45.8 }, // center area
+    world:    { x: 3.6,  y: 12.1, width: 37,   height: 37.2 }, // top-left area
+};
+
+// reads each zone's config and applies it as inline CSS — this is what actually moves and sizes the SVGs on screen
+document.querySelectorAll('.map-zone').forEach(zone => {
+    const key = zone.src.match(/campusmap_(\w+)\.svg/)?.[1]; // extract the zone name from the svg filename e.g. "cloud" from "campusmap_cloud.svg"
+    const cfg = zoneConfig[key]; // look up that zone's config object
+    if (!cfg) return; // skip if no config found for this zone
+    zone.style.left   = cfg.x      + '%'; // horizontal position from the left edge of the map
+    zone.style.top    = cfg.y      + '%'; // vertical position from the top edge of the map
+    zone.style.width  = cfg.width  + '%'; // width as a percentage of the map width
+    zone.style.height = cfg.height + '%'; // height as a percentage of the map height
+});
+
+// ===== Zone hover — lights up the zone and shows the info box next to the cursor =====
 const infobox  = document.getElementById('map-infobox'); // the floating info box element
 const infoName = document.getElementById('infobox-name'); // name line inside the info box
 const infoDesc = document.getElementById('infobox-desc'); // description line inside the info box
 
 document.querySelectorAll('.map-zone').forEach(zone => {
+
     zone.addEventListener('mouseenter', () => {
-        infoName.textContent = zone.dataset.name; // fill in the zone name from the data attribute
-        infoDesc.textContent = zone.dataset.info; // fill in the zone description from the data attribute
-        infobox.classList.add('visible'); // show the info box
+        zone.classList.add('hovered'); // adds the hovered class which CSS transitions opacity from 0 to 1
+        infoName.textContent = zone.dataset.name; // fills in the zone name from its data-name attribute in the HTML
+        infoDesc.textContent = zone.dataset.info; // fills in the zone description from its data-info attribute in the HTML
+        infobox.classList.add('visible'); // makes the info box appear
     });
 
     zone.addEventListener('mousemove', e => {
-        const offset = 18; // gap between the cursor tip and the info box edge
-        const boxW   = infobox.offsetWidth;
-        const boxH   = infobox.offsetHeight;
-        const left   = e.clientX + offset + boxW > window.innerWidth  ? e.clientX - offset - boxW : e.clientX + offset; // flip left if too close to right edge
-        const top    = e.clientY + offset + boxH > window.innerHeight ? e.clientY - offset - boxH : e.clientY + offset; // flip up if too close to bottom edge
-        infobox.style.left = left + 'px';
-        infobox.style.top  = top  + 'px';
+        const offset = 18; // px gap between the cursor tip and the nearest edge of the info box
+        const boxW   = infobox.offsetWidth; // current rendered width of the info box
+        const boxH   = infobox.offsetHeight; // current rendered height of the info box
+        const left   = e.clientX + offset + boxW > window.innerWidth  ? e.clientX - offset - boxW : e.clientX + offset; // place right of cursor, flip left if it would go off-screen
+        const top    = e.clientY + offset + boxH > window.innerHeight ? e.clientY - offset - boxH : e.clientY + offset; // place below cursor, flip up if it would go off-screen
+        infobox.style.left = left + 'px'; // move the info box to follow the cursor horizontally
+        infobox.style.top  = top  + 'px'; // move the info box to follow the cursor vertically
     });
 
     zone.addEventListener('mouseleave', () => {
-        infobox.classList.remove('visible'); // hide the info box when the cursor leaves the zone
+        zone.classList.remove('hovered'); // removes hovered class — CSS transitions opacity back to 0
+        infobox.classList.remove('visible'); // hides the info box
     });
+
 });
