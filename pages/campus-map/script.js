@@ -2,7 +2,7 @@
 const locations = [
     {
         id: 'lh1', type: 'lecture-hall', name: 'Lecture Hall #1',
-        x: 22, y: 28,
+        x: 68, y: 22,
         classes: [
             { name: 'Introduction to Starkeeping', time: '09:00', enrolled: false },
             { name: 'Solar Navigation 101',        time: '11:00', enrolled: false },
@@ -11,7 +11,7 @@ const locations = [
     },
     {
         id: 'lh2', type: 'lecture-hall', name: 'Lecture Hall #2',
-        x: 68, y: 22,
+        x: 22, y: 28,
         classes: [
             { name: 'Underwater Basket Weaving', time: '13:30', enrolled: false },
             { name: 'Gravity Manipulation 101',  time: '13:30', enrolled: false },
@@ -44,7 +44,7 @@ const locations = [
     },
     {
         id: 'gh1', type: 'guild-house', name: 'Guild House: Earthwatcher',
-        x: 15, y: 50,
+        x: 50, y: 20,
         classes: [
             { name: 'Earthwatcher Initiation', time: '08:00', enrolled: false },
             { name: 'Field Mission Briefing',  time: '17:00', enrolled: false },
@@ -52,7 +52,7 @@ const locations = [
     },
     {
         id: 'sa1', type: 'social-area', name: 'The Stargazer Lounge',
-        x: 80, y: 72,
+        x: 20, y: 72,
         classes: [
             { name: 'Open Mic Night',  time: '19:00', enrolled: false },
             { name: 'Community Forum', time: '12:00', enrolled: false },
