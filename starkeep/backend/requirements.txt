@@ -1,0 +1,36 @@
+# Starkeep Academy — Python Dependencies
+# Pin minor versions, not patches. Update intentionally.
+
+# ─── Django Core ─────────────────────────────────────────────────────────────
+Django==5.1.*
+djangorestframework==3.15.*
+djangorestframework-simplejwt==5.3.*
+django-cors-headers==4.4.*
+
+# ─── Auth ────────────────────────────────────────────────────────────────────
+django-allauth==0.63.*
+
+# ─── Real-Time ───────────────────────────────────────────────────────────────
+channels==4.1.*
+channels-redis==4.2.*
+daphne==4.1.*           # ASGI server for Channels
+
+# ─── Database ────────────────────────────────────────────────────────────────
+psycopg2-binary==2.9.*  # swap to psycopg[c] in production
+
+# ─── Cache ───────────────────────────────────────────────────────────────────
+django-redis==5.4.*
+
+# ─── File Storage (GCS — phase 4+) ──────────────────────────────────────────
+# django-storages[google]==1.14.*   # uncomment in phase 4
+
+# ─── Email ───────────────────────────────────────────────────────────────────
+sendgrid==6.11.*
+
+# ─── Dev Tools ───────────────────────────────────────────────────────────────
+django-extensions==3.2.*
+import-linter==2.1.*    # enforces DEC-009 dependency graph
+
+# ─── Testing ─────────────────────────────────────────────────────────────────
+pytest-django==4.8.*
+factory-boy==3.3.*

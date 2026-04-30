@@ -1,0 +1,22 @@
+# .importlinter
+# Enforces DEC-009: module dependency direction.
+# Run: lint-imports
+# CI: included in pre-commit + test suite
+
+[importlinter]
+root_packages =
+    apps
+
+[importlinter:contract:layers]
+name = Starkeep layer contract
+type = layers
+layers =
+    apps.lux
+    apps.starmap | apps.academy | apps.missions
+    apps.avatar
+    apps.users
+    apps.common
+
+# LUX must not be imported by any module above it.
+# If you need to trigger LUX from starmap, emit a Django signal.
+# See apps/lux/signals.py.

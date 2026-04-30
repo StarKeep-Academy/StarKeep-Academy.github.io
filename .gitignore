@@ -1,0 +1,27 @@
+# Node
+**/node_modules/
+
+# Python
+**/venv/
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/*.egg-info/
+**/.pytest_cache/
+**/.mypy_cache/
+
+# Environment
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Expo / React Native
+**/.expo/
+**/dist/
+**/build/
+
+# OS
+.DS_Store
+**/.DS_Store
+Thumbs.db

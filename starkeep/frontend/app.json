@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name":        "Starkeep Academy",
+    "slug":        "starkeep-academy",
+    "version":     "1.0.0",
+    "orientation": "portrait",
+    "scheme":      "starkeep",
+    "platforms":   ["ios", "android", "web"],
+
+    "icon":   "./assets/images/icon.png",
+    "splash": {
+      "image":      "./assets/images/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#3A3A3A"
+    },
+
+    "assetBundlePatterns": ["**/*"],
+
+    "ios": {
+      "supportsTablet":   true,
+      "bundleIdentifier": "io.starkeep.academy"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#3A3A3A"
+      },
+      "package": "io.starkeep.academy"
+    },
+    "web": {
+      "bundler":  "metro",
+      "output":   "static",
+      "favicon":  "./assets/images/favicon.png"
+    },
+
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-secure-store"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

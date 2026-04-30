@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"console.log\\(require\\('./node_modules/expo/package.json'\\).version\\)\")",
+      "Bash(node -e \"console.log\\(require\\('./node_modules/react-native/package.json'\\).version\\)\")",
+      "Bash(node -e \"console.log\\(require\\('./node_modules/@expo-google-fonts/syncopate/package.json'\\).version\\)\")",
+      "Bash(DJANGO_SECRET_KEY=dev-secret-key DJANGO_SETTINGS_MODULE=starkeep_project.settings venv/Scripts/python manage.py check --deploy)",
+      "Bash(DJANGO_SECRET_KEY=dev-secret-key DJANGO_SETTINGS_MODULE=starkeep_project.settings venv/Scripts/python manage.py check)"
+    ]
+  }
+}
