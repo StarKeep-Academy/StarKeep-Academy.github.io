@@ -54,6 +54,11 @@ class Constellation(TimestampedModel):
     symbol = models.CharField(max_length=50, blank=True)  # e.g. "wolf", "sword"
     completed_at = models.DateTimeField(null=True, blank=True)  # null = not yet complete
 
+    # Sky position — set by AI at creation time (STARMAP_SPEC §11, Phase 4+)
+    angle_deg     = models.FloatField(null=True, blank=True)  # 0–360, radial position in sky
+    radius        = models.FloatField(null=True, blank=True)  # 0–1 normalized distance from North Star
+    is_north_star = models.BooleanField(default=False)        # True for the singular North Star constellation
+
     class Meta:
         ordering = ["created_at"]
 
@@ -132,6 +137,9 @@ class Milestone(TimestampedModel):
     x = models.FloatField(null=True, blank=True)  # 0.0–1.0
     y = models.FloatField(null=True, blank=True)  # 0.0–1.0
     # z will be added when VR client needs it (new nullable field, no migration pain)
+
+    # Planet ordering (STARMAP_SPEC §11): 1 = innermost orbit, null = not a planet
+    orbit_order = models.PositiveIntegerField(null=True, blank=True)
 
     class Meta:
         ordering = ["-created_at"]

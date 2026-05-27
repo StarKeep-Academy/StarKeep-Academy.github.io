@@ -82,6 +82,7 @@ class AvatarFullSerializer(serializers.ModelSerializer):
             "heroic_path",
             "learning_path",
             "purpose",
+            "north_star_goal",
             "powers",
             "archetype",
             "hours_of_impact",
@@ -93,9 +94,9 @@ class AvatarFullSerializer(serializers.ModelSerializer):
 
 class AvatarUpdateSerializer(serializers.ModelSerializer):
     """PATCH /avatars/{id} — all fields optional."""
-    _optional = ["alias", "display_name", "purpose", "heroic_path", "learning_path"]
+    _optional = ["alias", "display_name", "purpose", "north_star_goal", "heroic_path", "learning_path"]
 
     class Meta:
         model  = Avatar
-        fields = ["alias", "display_name", "purpose", "heroic_path", "learning_path"]
-        extra_kwargs = {f: {"required": False} for f in ["alias", "display_name", "purpose", "heroic_path", "learning_path"]}
+        fields = ["alias", "display_name", "purpose", "north_star_goal", "heroic_path", "learning_path"]
+        extra_kwargs = {f: {"required": False} for f in ["alias", "display_name", "purpose", "north_star_goal", "heroic_path", "learning_path"]}

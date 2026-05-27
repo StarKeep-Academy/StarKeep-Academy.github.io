@@ -47,27 +47,29 @@ export interface ImpactSource {
 
 // VR-stable contract — field names never change (DEC-006)
 export interface AvatarProfile {
-  id:            string;
-  alias:         string;         // e.g. "DREAMWALKER" — displayed in ALL CAPS
-  display_name:  string;         // e.g. "Ryan Boyd"
-  level:         number;         // e.g. 700
-  heroic_path:   HeroicPath | null;   // null until set after quiz (DEC-012)
-  learning_path: LearningPath | null; // null until set after quiz
-  purpose:       string;
-  powers:        string[];
-  archetype:     ArchetypeProfile | null;
+  id:              string;
+  alias:           string;              // e.g. "DREAMWALKER" — displayed in ALL CAPS
+  display_name:    string;              // e.g. "Ryan Boyd"
+  level:           number;              // e.g. 700
+  heroic_path:     HeroicPath | null;  // null until set after quiz (DEC-012)
+  learning_path:   LearningPath | null;
+  purpose:         string;
+  north_star_goal: string;             // confirmed North Star goal (STARMAP_SPEC §8)
+  powers:          string[];
+  archetype:       ArchetypeProfile | null;
   hours_of_impact: number;
   impact_sources:  ImpactSource[];
-  created_at:    string;
-  updated_at:    string;
+  created_at:      string;
+  updated_at:      string;
 }
 
 export interface AvatarUpdatePayload {
-  alias?:         string;
-  display_name?:  string;
-  purpose?:       string;
-  heroic_path?:   string;
-  learning_path?: string;
+  alias?:           string;
+  display_name?:    string;
+  purpose?:         string;
+  north_star_goal?: string;
+  heroic_path?:     string;
+  learning_path?:   string;
 }
 
 // ─── API Functions ────────────────────────────────────────────────────────────

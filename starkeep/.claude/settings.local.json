@@ -5,7 +5,13 @@
       "Bash(node -e \"console.log\\(require\\('./node_modules/react-native/package.json'\\).version\\)\")",
       "Bash(node -e \"console.log\\(require\\('./node_modules/@expo-google-fonts/syncopate/package.json'\\).version\\)\")",
       "Bash(DJANGO_SECRET_KEY=dev-secret-key DJANGO_SETTINGS_MODULE=starkeep_project.settings venv/Scripts/python manage.py check --deploy)",
-      "Bash(DJANGO_SECRET_KEY=dev-secret-key DJANGO_SETTINGS_MODULE=starkeep_project.settings venv/Scripts/python manage.py check)"
+      "Bash(DJANGO_SECRET_KEY=dev-secret-key DJANGO_SETTINGS_MODULE=starkeep_project.settings venv/Scripts/python manage.py check)",
+      "Bash(python manage.py makemigrations --dry-run)",
+      "PowerShell(cd \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\StarKeep-Academy.github.io\\\\starkeep\\\\backend\"; $env:DJANGO_SETTINGS_MODULE=\"starkeep_project.settings\"; .\\\\venv\\\\Scripts\\\\python.exe manage.py makemigrations --dry-run 2>&1 | Select-Object -First 40)",
+      "Bash(npx expo *)",
+      "Bash(npm install *)",
+      "Bash(node -e \"const p = require\\('./package.json'\\); console.log\\(p.dependencies['react-native-svg'] || 'NOT INSTALLED'\\)\")",
+      "Bash(node -e \"const p = require\\('./package.json'\\); console.log\\('react-native-svg:', p.dependencies['react-native-svg']\\)\")"
     ]
   }
 }

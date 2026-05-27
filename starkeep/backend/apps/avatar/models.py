@@ -61,8 +61,9 @@ class Avatar(TimestampedModel):
     learning_path = models.CharField(max_length=20, choices=LearningPath.choices, blank=True)
 
     # Purpose
-    purpose = models.TextField(blank=True)                   # e.g. "Self-Actualization Architect"
-    powers  = models.JSONField(default=list)                 # unlocked by achievements, displayed on avatar card
+    purpose         = models.TextField(blank=True)           # e.g. "Self-Actualization Architect"
+    north_star_goal = models.TextField(blank=True)           # confirmed North Star goal text (STARMAP_SPEC §8)
+    powers          = models.JSONField(default=list)         # unlocked by achievements, displayed on avatar card
 
     # Impact tracking
     hours_of_impact = models.PositiveIntegerField(default=0)

@@ -33,7 +33,7 @@ class StarSerializer(serializers.ModelSerializer):
 
     class Meta:
         model  = Milestone
-        fields = ["id", "title", "completed_at", "lux_issued", "x", "y"]
+        fields = ["id", "title", "description", "completed_at", "lux_issued", "x", "y", "orbit_order"]
 
 
 # ─── Constellation ────────────────────────────────────────────────────────────
@@ -48,7 +48,7 @@ class ConstellationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model  = Constellation
-        fields = ["id", "name", "symbol", "completed_at", "stars"]
+        fields = ["id", "name", "symbol", "completed_at", "angle_deg", "radius", "is_north_star", "stars"]
 
 
 # ─── Constellation Path ───────────────────────────────────────────────────────

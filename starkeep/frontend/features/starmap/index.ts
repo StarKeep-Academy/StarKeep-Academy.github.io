@@ -25,19 +25,24 @@ export type EvidenceType = 'photo' | 'video' | 'text' | 'link' | 'certificate';
 export interface Star {
   id:           string;
   title:        string;
+  description?: string;              // milestone description (for detail panel)
   completed_at: string;
   lux_issued:   number;
-  x:            number;    // 0.0–1.0 placement hint
-  y:            number;    // 0.0–1.0 placement hint
+  x:            number;              // 0.0–1.0 placement hint
+  y:            number;              // 0.0–1.0 placement hint
+  orbit_order?: number | null;       // for planets: 1 = innermost ring
   // z will be added when VR client requests it (no breaking change)
 }
 
 export interface Constellation {
-  id:           string;
-  name:         string;
-  symbol:       string;    // e.g. "wolf" — becomes the visual myth in the sky
-  completed_at: string | null;
-  stars:        Star[];
+  id:            string;
+  name:          string;
+  symbol:        string;             // e.g. "wolf" — visual myth in the sky
+  completed_at:  string | null;
+  stars:         Star[];
+  angle_deg:     number | null;      // sky position 0–360 (STARMAP_SPEC §11)
+  radius:        number | null;      // normalized distance from North Star
+  is_north_star: boolean;            // True for the singular North Star constellation
 }
 
 export interface ConstellationPath {
@@ -68,6 +73,25 @@ export interface Evidence {
   type:    EvidenceType;
   payload: string;         // text content or URL
   label?:  string;
+}
+
+export interface MilestoneDetail {
+  id:                 string;
+  title:              string;
+  description:        string;
+  source:             string;
+  status:             MilestoneStatus;
+  validation_status:  string;
+  constellation_id:   string | null;
+  lvm_scores:         Record<string, number>;
+  lux_issued:         number;
+  x:                  number | null;
+  y:                  number | null;
+  rejection_feedback: string;
+  validated_at:       string | null;
+  evidence:           Evidence[];
+  created_at:         string;
+  updated_at:         string;
 }
 
 export interface CreateMilestonePayload {
@@ -135,6 +159,15 @@ export function useCreateMilestone() {
       // Invalidate the full star map to refetch
       queryClient.invalidateQueries({ queryKey: starmapKeys.all });
     },
+  });
+}
+
+export function useMilestoneDetail(id: string) {
+  return useQuery({
+    queryKey: starmapKeys.milestone(id),
+    queryFn:  () => apiClient.get<MilestoneDetail>(`/milestones/${id}`),
+    enabled:  !!id,
+    staleTime: 1000 * 60 * 5,
   });
 }
 

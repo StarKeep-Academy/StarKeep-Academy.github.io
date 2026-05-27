@@ -1,360 +1,471 @@
 /**
  * app/(shell)/star-maps/index.tsx
  *
- * Phase 3 — Star Map read view.
- * Shows the full hierarchy: ConstellationPaths → Constellations → Stars
- * plus a Pending Milestones section below.
+ * Phase 3 — Star Map screens.
  *
- * Phase 4 will add create/edit/submit actions.
+ * Layout: dome header (identical geometry to RadialNav) always visible.
+ * Content area below dome varies by state:
+ *
+ *   empty  → EmptyStarMap  (wireframe image 1: + button + arc)
+ *            → GoalInputSheet  (wireframe image 2: gold orb + suggestions)
+ *   loaded → zoom navigation (0 = NorthStar, 1 = FullSky, 2 = Constellation, 3 = StarDetail)
+ *
+ * Phase 4 will wire GoalInputSheet to the creation API.
  */
 
+import { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
   ScrollView,
   Pressable,
   StyleSheet,
+  Animated,
+  useWindowDimensions,
   ActivityIndicator,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useAuthStore } from '../../../features/auth/store';
+import { useAvatar } from '../../../features/avatar/index';
 import {
   useStarMap,
   type StarMap,
-  type ConstellationPath,
   type Constellation,
   type Star,
-  type PendingMilestone,
 } from '../../../features/starmap/index';
-import {
-  colors,
-  typography,
-  spacing,
-  radii,
-  layout,
-  statusColors,
-} from '../../../design-system/tokens';
+import { colors, typography, spacing, radii } from '../../../design-system/tokens';
+import { NorthStarScreen }    from '../../../features/starmap/components/NorthStarScreen';
+import { FullSkyView }        from '../../../features/starmap/components/FullSkyView';
+import { ConstellationView }  from '../../../features/starmap/components/ConstellationView';
+import { StarDetailPanel }    from '../../../features/starmap/components/StarDetailPanel';
 
-// ─── Dev mock (used when backend is not running in __DEV__ mode) ──────────────
+// ─── Zoom state ───────────────────────────────────────────────────────────────
+
+type ZoomState =
+  | { level: 1 }
+  | { level: 0 }
+  | { level: 2; constellationId: string }
+  | { level: 3; constellationId: string; starId: string };
+
+// ─── Dev mock data ────────────────────────────────────────────────────────────
 
 const DEV_STAR_MAP: StarMap = {
-  avatar_id: '00000000-0000-0000-0000-000000000002',
-  total_stars: 3,
+  avatar_id:           '00000000-0000-0000-0000-000000000002',
+  total_stars:         3,
   total_constellations: 1,
   constellation_paths: [
     {
-      id: '00000000-0000-0000-0000-000000000010',
+      id:   '00000000-0000-0000-0000-000000000010',
       name: 'Digital Futures Arc',
       constellations: [
         {
-          id: '00000000-0000-0000-0000-000000000020',
-          name: 'Creative Technology',
-          symbol: 'wolf',
+          id:           '00000000-0000-0000-0000-000000000020',
+          name:         'Creative Technology',
+          symbol:       'wolf',
           completed_at: '2026-03-01T00:00:00Z',
+          angle_deg:    45,
+          radius:       0.70,
+          is_north_star: false,
           stars: [
-            {
-              id: '00000000-0000-0000-0000-000000000030',
-              title: 'Completed 3D Printing 101',
-              completed_at: '2026-02-01T00:00:00Z',
-              lux_issued: 14,
-              x: 0.42,
-              y: 0.67,
-            },
-            {
-              id: '00000000-0000-0000-0000-000000000031',
-              title: 'Built a sustainable lamp prototype',
-              completed_at: '2026-02-15T00:00:00Z',
-              lux_issued: 16,
-              x: 0.58,
-              y: 0.43,
-            },
-            {
-              id: '00000000-0000-0000-0000-000000000032',
-              title: 'Distributed lamps to 5 households',
-              completed_at: '2026-03-01T00:00:00Z',
-              lux_issued: 22,
-              x: 0.5,
-              y: 0.8,
-            },
+            { id: '00000000-0000-0000-0000-000000000030', title: 'Completed 3D Printing 101',      description: 'Built and operated a FDM printer for rapid prototyping.', completed_at: '2026-02-01T00:00:00Z', lux_issued: 14, x: 0.25, y: 0.30 },
+            { id: '00000000-0000-0000-0000-000000000031', title: 'Built a sustainable lamp prototype', description: 'Designed a solar-powered lamp from recycled materials.',  completed_at: '2026-02-15T00:00:00Z', lux_issued: 16, x: 0.72, y: 0.28 },
+            { id: '00000000-0000-0000-0000-000000000032', title: 'Distributed lamps to 5 households', description: 'Community distribution with photographic evidence.',       completed_at: '2026-03-01T00:00:00Z', lux_issued: 22, x: 0.50, y: 0.72 },
           ],
         },
       ],
     },
   ],
   pending_milestones: [
-    {
-      id: '00000000-0000-0000-0000-000000000040',
-      title: 'Plant a community garden',
-      status: 'active',
-      validation_status: 'not_submitted',
-      constellation_id: null,
-    },
-    {
-      id: '00000000-0000-0000-0000-000000000041',
-      title: 'Document solar panel installation',
-      status: 'submitted',
-      validation_status: 'pending_review',
-      constellation_id: '00000000-0000-0000-0000-000000000020',
-    },
-    {
-      id: '00000000-0000-0000-0000-000000000042',
-      title: 'Community water filtration proposal',
-      status: 'rejected',
-      validation_status: 'rejected',
-      constellation_id: null,
-      rejection_feedback: 'Please add more evidence photos of the installation process.',
-    },
+    { id: '00000000-0000-0000-0000-000000000040', title: 'Plant a community garden',           status: 'active',    validation_status: 'not_submitted',  constellation_id: null },
+    { id: '00000000-0000-0000-0000-000000000041', title: 'Document solar panel installation',  status: 'submitted', validation_status: 'pending_review', constellation_id: '00000000-0000-0000-0000-000000000020' },
+    { id: '00000000-0000-0000-0000-000000000042', title: 'Community water filtration proposal', status: 'rejected', validation_status: 'rejected',       constellation_id: null, rejection_feedback: 'Please add more evidence photos of the installation process.' },
   ],
 };
+
+// Toggle this to test the empty state in dev:
+// const DEV_DATA = { ...DEV_STAR_MAP, constellation_paths: [], pending_milestones: [] };
+const DEV_DATA = DEV_STAR_MAP;
+
+// ─── Goal input mock suggestions ─────────────────────────────────────────────
+
+const GOAL_SUGGESTIONS = [
+  'Create a gamified sustainability app',
+  'Build a farming robot',
+  'Create a community townhall',
+  'Design an urban food forest',
+  'Develop renewable energy curriculum',
+  'Build accessible tech for elderly',
+  'Launch a youth coding program',
+];
+
+// ─── Dome geometry (same formula as RadialNav) ───────────────────────────────
+
+function useDome() {
+  const { width: W, height: H } = useWindowDimensions();
+  const { top: safeTop }        = useSafeAreaInsets();
+
+  return useMemo(() => {
+    const cx   = W / 2;
+    const arcH = H / 3;
+    const R    = Math.max(W * 0.76, 400);
+    const cy   = arcH - R;
+    return { W, H, cx, cy, R, arcH, safeTop };
+  }, [W, H, safeTop]);
+}
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function StarMapsScreen() {
-  const avatarId = useAuthStore((s) => s.avatarId);
-  const { data, isLoading, isError, error } = useStarMap(avatarId ?? '');
+  const avatarId = useAuthStore(s => s.avatarId);
+  const { data: starMap, isLoading, isError, error } = useStarMap(avatarId ?? '');
+  const { data: avatar } = useAvatar(avatarId ?? '');
 
-  // In dev, fall back to mock data when the backend isn't running.
-  // The check is intentionally narrow: only "Failed to fetch" (connection refused),
-  // not API errors (auth failures, 404s) which should surface normally.
+  const [zoom,          setZoom]          = useState<ZoomState>({ level: 1 });
+  const [showGoalInput, setShowGoalInput] = useState(false);
+  const contentOpacity = useRef(new Animated.Value(1)).current;
+
+  const dome        = useDome();
+  const orbitRadius = dome.H / 2 - dome.cy;
+
   const isConnectionRefused =
     __DEV__ && isError && (error as Error)?.message === 'Failed to fetch';
-  const displayData = isConnectionRefused ? DEV_STAR_MAP : data;
-  const showError = isError && !isConnectionRefused;
+  const displayData = isConnectionRefused ? DEV_DATA : starMap;
+  const showError   = isError && !isConnectionRefused;
+
+  const isEmpty =
+    displayData &&
+    displayData.constellation_paths.length === 0 &&
+    displayData.pending_milestones.length === 0;
+
+  // ── Navigation helpers ─────────────────────────────────────────────────────
+
+  const goToNorthStar    = () => setZoom({ level: 0 });
+  const goToSky          = () => setZoom({ level: 1 });
+  const goToConstellation = (id: string)  => setZoom({ level: 2, constellationId: id });
+  const goToStar         = (cid: string, sid: string) =>
+    setZoom({ level: 3, constellationId: cid, starId: sid });
+
+  // Derive selected data from zoom state
+  const selectedConstellation: Constellation | undefined = useMemo(() => {
+    if (!displayData) return undefined;
+    if (zoom.level !== 2 && zoom.level !== 3) return undefined;
+    return displayData.constellation_paths
+      .flatMap(p => p.constellations)
+      .find(c => c.id === zoom.constellationId);
+  }, [displayData, zoom]);
+
+  const selectedStar: Star | undefined = useMemo(() => {
+    if (zoom.level !== 3) return undefined;
+    return selectedConstellation?.stars.find(s => s.id === zoom.starId);
+  }, [selectedConstellation, zoom]);
+
+  const pendingForConstellation = useMemo(() => {
+    if (!displayData || (zoom.level !== 2 && zoom.level !== 3)) return [];
+    return displayData.pending_milestones.filter(
+      m => m.constellation_id === (zoom as { constellationId: string }).constellationId
+    );
+  }, [displayData, zoom]);
+
+  // ── Zoom transition animation ──────────────────────────────────────────────
+
+  useEffect(() => {
+    contentOpacity.setValue(0);
+    Animated.timing(contentOpacity, {
+      toValue:         1,
+      duration:        280,
+      useNativeDriver: true,
+    }).start();
+  }, [zoom.level, showGoalInput]);
+
+  // ── Zoom header state ──────────────────────────────────────────────────────
+
+  const zoomLabel =
+    zoom.level === 0 ? 'NORTH STAR'
+    : zoom.level === 2 || zoom.level === 3 ? (selectedConstellation?.name.toUpperCase() ?? 'CONSTELLATION')
+    : null;  // null = show "STAR MAPS" (levels 1 + empty state)
+
+  const canGoBack = zoom.level !== 1 || showGoalInput;
+
+  const handleBack = () => {
+    if (showGoalInput) { setShowGoalInput(false); return; }
+    if (zoom.level === 0) { setZoom({ level: 1 }); return; }
+    if (zoom.level === 2) { setZoom({ level: 1 }); return; }
+    if (zoom.level === 3) { setZoom({ level: 2, constellationId: (zoom as any).constellationId }); return; }
+    router.back();
+  };
+
+  // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <View style={styles.container}>
-      <ScreenHeader
-        totalStars={displayData?.total_stars}
-        totalConstellations={displayData?.total_constellations}
-      />
 
-      {isConnectionRefused && <DevBanner />}
+      {/* Dome — absolute, always on top ─────────────────────────────────── */}
+      <View pointerEvents="none" style={{
+        position:        'absolute',
+        width:           dome.R * 2,
+        height:          dome.R * 2,
+        borderRadius:    dome.R,
+        backgroundColor: colors.bg.dome,
+        left:            dome.cx - dome.R,
+        top:             dome.cy - dome.R,
+      }} />
 
-      {isLoading && <LoadingState />}
+      {/* Arc outline — very subtle ring just outside the dome */}
+      <View pointerEvents="none" style={{
+        position:        'absolute',
+        width:           dome.R * 2 + 6,
+        height:          dome.R * 2 + 6,
+        borderRadius:    dome.R + 3,
+        borderWidth:     1,
+        borderColor:     'rgba(210,220,255,0.14)',
+        backgroundColor: 'transparent',
+        left:            dome.cx - dome.R - 3,
+        top:             dome.cy - dome.R - 3,
+      }} />
 
-      {showError && (
-        <ErrorState
-          message={(error as Error)?.message ?? 'Could not load your Star Map.'}
-        />
-      )}
-
-      {!isLoading && !showError && displayData && (
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {displayData.constellation_paths.length > 0 ? (
-            displayData.constellation_paths.map((path) => (
-              <ConstellationPathSection key={path.id} path={path} />
-            ))
-          ) : (
-            <EmptyConstellations />
-          )}
-
-          <PendingSection milestones={displayData.pending_milestones} />
-        </ScrollView>
-      )}
-    </View>
-  );
-}
-
-// ─── Header ───────────────────────────────────────────────────────────────────
-
-function ScreenHeader({
-  totalStars,
-  totalConstellations,
-}: {
-  totalStars?: number;
-  totalConstellations?: number;
-}) {
-  return (
-    <View style={styles.header}>
-      <Pressable onPress={() => router.back()} style={styles.backBtn}>
-        <Text style={styles.backText}>‹ MENU</Text>
-      </Pressable>
-
-      <Text style={styles.title}>STAR MAPS</Text>
-
-      {totalStars !== undefined && (
-        <View style={styles.statsRow}>
-          <StatBadge value={totalStars} label="STARS" />
-          <View style={styles.statDivider} />
-          <StatBadge value={totalConstellations ?? 0} label="CONSTELLATIONS" />
-        </View>
-      )}
-    </View>
-  );
-}
-
-function StatBadge({ value, label }: { value: number; label: string }) {
-  return (
-    <View style={styles.statBadge}>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </View>
-  );
-}
-
-// ─── Constellation Path Section ───────────────────────────────────────────────
-
-function ConstellationPathSection({ path }: { path: ConstellationPath }) {
-  return (
-    <View style={styles.pathSection}>
-      <Text style={styles.pathName}>{path.name.toUpperCase()}</Text>
-
-      {path.constellations.length > 0 ? (
-        path.constellations.map((constellation) => (
-          <ConstellationCard key={constellation.id} constellation={constellation} />
-        ))
-      ) : (
-        <Text style={styles.emptyHint}>No constellations yet.</Text>
-      )}
-    </View>
-  );
-}
-
-// ─── Constellation Card ───────────────────────────────────────────────────────
-
-function ConstellationCard({ constellation }: { constellation: Constellation }) {
-  const isComplete = !!constellation.completed_at;
-
-  return (
-    <View style={styles.constellationCard}>
-      <View style={styles.constellationHeader}>
-        <View style={styles.constellationMeta}>
-          <Text style={styles.constellationName}>{constellation.name}</Text>
-          {constellation.symbol ? (
-            <Text style={styles.constellationSymbol}>
-              {constellation.symbol.toUpperCase()}
-            </Text>
-          ) : null}
-        </View>
-        <View
-          style={[
-            styles.completePill,
-            { backgroundColor: isComplete ? colors.semantic.success : colors.bg.card },
-          ]}
-        >
-          <Text
-            style={[
-              styles.completePillText,
-              { color: isComplete ? colors.bg.surface : colors.fg.muted },
-            ]}
-          >
-            {isComplete ? 'COMPLETE' : 'IN PROGRESS'}
-          </Text>
-        </View>
-      </View>
-
-      {constellation.stars.length > 0 ? (
-        <View style={styles.starList}>
-          {constellation.stars.map((star) => (
-            <StarRow key={star.id} star={star} />
-          ))}
-        </View>
-      ) : (
-        <Text style={styles.emptyHint}>No stars earned yet.</Text>
-      )}
-    </View>
-  );
-}
-
-// ─── Star Row ─────────────────────────────────────────────────────────────────
-
-function StarRow({ star }: { star: Star }) {
-  const date = star.completed_at
-    ? new Date(star.completed_at).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      })
-    : null;
-
-  return (
-    <View style={styles.starRow}>
-      <Text style={styles.starDot}>★</Text>
-      <View style={styles.starInfo}>
-        <Text style={styles.starTitle}>{star.title}</Text>
-        {date && <Text style={styles.starDate}>{date}</Text>}
-      </View>
-      {star.lux_issued > 0 && (
-        <Text style={styles.starLux}>+{star.lux_issued} LUX</Text>
-      )}
-    </View>
-  );
-}
-
-// ─── Pending Milestones Section ───────────────────────────────────────────────
-
-function PendingSection({ milestones }: { milestones: PendingMilestone[] }) {
-  if (milestones.length === 0) return null;
-
-  return (
-    <View style={styles.pendingSection}>
-      <Text style={styles.sectionHeading}>ACTIVE MILESTONES</Text>
-      {milestones.map((m) => (
-        <MilestoneRow key={m.id} milestone={m} />
-      ))}
-    </View>
-  );
-}
-
-function MilestoneRow({ milestone }: { milestone: PendingMilestone }) {
-  const statusColor = statusColors[milestone.status] ?? colors.fg.muted;
-
-  return (
-    <View style={styles.milestoneRow}>
-      <View style={styles.milestoneInfo}>
-        <Text style={styles.milestoneTitle}>{milestone.title}</Text>
-        {milestone.status === 'rejected' && milestone.rejection_feedback ? (
-          <Text style={styles.rejectionNote}>{milestone.rejection_feedback}</Text>
-        ) : null}
-      </View>
-      <View style={[styles.statusPill, { borderColor: statusColor }]}>
-        <Text style={[styles.statusPillText, { color: statusColor }]}>
-          {milestone.status.toUpperCase()}
+      {/* Dome title */}
+      <View pointerEvents="none" style={{
+        position:   'absolute',
+        top:        dome.arcH * 0.28,
+        left:       0,
+        right:      0,
+        alignItems: 'center',
+      }}>
+        <Text style={styles.domeTitle}>
+          {zoomLabel ?? 'STAR MAPS'}
         </Text>
       </View>
+
+      {/* Back / close button */}
+      {canGoBack && (
+        <Pressable
+          style={{ position: 'absolute', top: dome.safeTop + 16, left: 16, zIndex: 20 }}
+          onPress={handleBack}
+        >
+          <Text style={styles.backArrow}>←</Text>
+        </Pressable>
+      )}
+
+      {/* Dev banner */}
+      {isConnectionRefused && (
+        <View style={[styles.devBanner, { top: dome.arcH }]}>
+          <Text style={styles.devBannerText}>DEV — MOCK DATA</Text>
+        </View>
+      )}
+
+      {/* ── Content area — padded to start below dome ───────────────────── */}
+      <Animated.View style={[styles.content, { paddingTop: dome.arcH + (isConnectionRefused ? 24 : 0), opacity: contentOpacity }]}>
+
+        {isLoading && (
+          <View style={styles.centered}>
+            <ActivityIndicator size="large" color={colors.accent.cyan} />
+            <Text style={styles.loadingText}>LOADING STAR MAP</Text>
+          </View>
+        )}
+
+        {showError && (
+          <View style={styles.centered}>
+            <Text style={styles.errorTitle}>UNABLE TO LOAD</Text>
+            <Text style={styles.errorDetail}>{(error as Error)?.message}</Text>
+          </View>
+        )}
+
+        {!isLoading && !showError && displayData && (
+          <>
+            {/* ── EMPTY STATE ─────────────────────────────────────────── */}
+            {isEmpty && !showGoalInput && (
+              <EmptyStarMap
+                onCreateConstellation={() => setShowGoalInput(true)}
+                dome={dome}
+              />
+            )}
+
+            {/* ── GOAL INPUT (stub — Phase 4 will wire creation API) ─── */}
+            {isEmpty && showGoalInput && (
+              <GoalInputSheet
+                onDismiss={() => setShowGoalInput(false)}
+                dome={dome}
+              />
+            )}
+
+            {/* ── POPULATED — ZOOM 0: North Star ─────────────────────── */}
+            {!isEmpty && zoom.level === 0 && (
+              <NorthStarScreen
+                starMap={displayData}
+                avatar={avatar}
+                onOpenSky={goToSky}
+                onOpenConstellation={goToConstellation}
+              />
+            )}
+
+            {/* ── POPULATED — ZOOM 1: Full Sky ───────────────────────── */}
+            {!isEmpty && zoom.level === 1 && (
+              <FullSkyView
+                starMap={displayData}
+                onSelectConstellation={goToConstellation}
+                onOpenNorthStar={goToNorthStar}
+              />
+            )}
+
+            {/* ── POPULATED — ZOOM 2: Constellation ─────────────────── */}
+            {!isEmpty && zoom.level === 2 && selectedConstellation && (
+              <ConstellationView
+                constellation={selectedConstellation}
+                pendingMilestones={pendingForConstellation}
+                onBack={() => setZoom({ level: 1 })}
+                onSelectStar={sid =>
+                  goToStar((zoom as { constellationId: string }).constellationId, sid)
+                }
+              />
+            )}
+
+            {/* ── POPULATED — ZOOM 3: Star expanded ─────────────────── */}
+            {!isEmpty && zoom.level === 3 && selectedConstellation && (
+              <>
+                <ConstellationView
+                  constellation={selectedConstellation}
+                  pendingMilestones={pendingForConstellation}
+                  onBack={() => setZoom({ level: 2, constellationId: (zoom as any).constellationId })}
+                  onSelectStar={sid =>
+                    goToStar((zoom as any).constellationId, sid)
+                  }
+                />
+                {selectedStar && (
+                  <StarDetailPanel
+                    star={selectedStar}
+                    onClose={() => setZoom({ level: 2, constellationId: (zoom as any).constellationId })}
+                  />
+                )}
+              </>
+            )}
+          </>
+        )}
+      </Animated.View>
+
+      {/* Orbit ring — concentric with dome, southern tip at screen center */}
+      <View
+        pointerEvents="none"
+        style={{
+          position:        'absolute',
+          width:           orbitRadius * 2,
+          height:          orbitRadius * 2,
+          borderRadius:    orbitRadius,
+          borderWidth:     1,
+          borderColor:     'rgba(45,108,223,0.28)',
+          backgroundColor: 'transparent',
+          left:            dome.W / 2 - orbitRadius,
+          top:             dome.cy - orbitRadius,
+        }}
+      />
     </View>
   );
 }
 
-// ─── Empty / Loading / Error / Dev States ─────────────────────────────────────
+// ─── Empty State (wireframe image 1) ─────────────────────────────────────────
 
-function DevBanner() {
+function EmptyStarMap({
+  onCreateConstellation,
+  dome,
+}: {
+  onCreateConstellation: () => void;
+  dome: ReturnType<typeof useDome>;
+}) {
+  const pulseAnim = useRef(new Animated.Value(0.45)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1.0, duration: 1600, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 0.45, duration: 1600, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, []);
+
+  const btnSize  = 68;
+  const ringSize = btnSize + 18;
+
   return (
-    <View style={styles.devBanner}>
-      <Text style={styles.devBannerText}>DEV — MOCK DATA (backend not running)</Text>
+    <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+      <View style={styles.plusWrapper} pointerEvents="box-none">
+        <Pressable
+          style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
+          onPress={onCreateConstellation}
+        >
+          {/* Pulsing outer glow */}
+          <Animated.View style={[styles.plusGlow, { width: ringSize + 16, height: ringSize + 16, borderRadius: (ringSize + 16) / 2, opacity: pulseAnim }]} />
+
+          {/* Gold ring */}
+          <View style={[styles.plusRing, { width: ringSize, height: ringSize, borderRadius: ringSize / 2 }]}>
+            {/* Dark inner circle */}
+            <View style={[styles.plusInner, { width: btnSize, height: btnSize, borderRadius: btnSize / 2 }]}>
+              <Text style={styles.plusText}>+</Text>
+            </View>
+          </View>
+        </Pressable>
+
+        <Text style={styles.createLabel}>create new constellation</Text>
+      </View>
     </View>
   );
 }
 
-function LoadingState() {
-  return (
-    <View style={styles.centered}>
-      <ActivityIndicator size="large" color={colors.accent.cyan} />
-      <Text style={styles.loadingText}>LOADING STAR MAP</Text>
-    </View>
-  );
-}
+// ─── Goal Input Sheet (wireframe image 2, Phase 4 stub) ──────────────────────
 
-function ErrorState({ message }: { message: string }) {
-  return (
-    <View style={styles.centered}>
-      <Text style={styles.errorTitle}>UNABLE TO LOAD</Text>
-      <Text style={styles.errorDetail}>{message}</Text>
-    </View>
-  );
-}
+function GoalInputSheet({
+  onDismiss,
+  dome,
+}: {
+  onDismiss: () => void;
+  dome:      ReturnType<typeof useDome>;
+}) {
+  const [selected, setSelected] = useState<number | null>(0);
 
-function EmptyConstellations() {
   return (
-    <View style={styles.emptyConstellations}>
-      <Text style={styles.emptyTitle}>YOUR SKY IS EMPTY</Text>
-      <Text style={styles.emptyBody}>
-        Complete milestones to earn Stars and form Constellations.
+    <View style={styles.goalContainer}>
+      {/* Gold North Star orb */}
+      <View style={styles.goalOrb} />
+
+      {/* Label */}
+      <Text style={styles.goalLabel}>What is your goal?:</Text>
+
+      {/* Suggestion list */}
+      <View style={styles.goalList}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.goalListContent}
+        >
+          {GOAL_SUGGESTIONS.map((g, i) => (
+            <Pressable
+              key={g}
+              style={[
+                styles.goalItem,
+                i < GOAL_SUGGESTIONS.length - 1 && styles.goalItemBorder,
+                selected === i && styles.goalItemSelected,
+              ]}
+              onPress={() => setSelected(i)}
+            >
+              <Text style={[
+                styles.goalItemText,
+                selected === i && { color: colors.fg.primary },
+              ]}>
+                {g}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* Phase 4 note */}
+      <Text style={styles.goalPhaseNote}>
+        Goal creation arrives in Phase 4 — selection is a preview.
       </Text>
+
+      <Pressable style={styles.goalDismiss} onPress={onDismiss}>
+        <Text style={styles.goalDismissText}>← BACK</Text>
+      </Pressable>
     </View>
   );
 }
@@ -363,282 +474,183 @@ function EmptyConstellations() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flex:            1,
     backgroundColor: colors.bg.base,
+    overflow:        'hidden',
   },
 
-  // Header
-  header: {
-    paddingTop: spacing.xxl,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-    backgroundColor: colors.bg.base,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.default,
-  },
-  backBtn: {
-    alignSelf: 'flex-start',
-    paddingVertical: spacing.xs,
-    marginBottom: spacing.sm,
-  },
-  backText: {
-    fontFamily: typography.fonts.display,
-    fontSize: typography.sizes.xs,
-    color: colors.fg.muted,
-    letterSpacing: typography.tracking.wider,
-  },
-  title: {
-    fontFamily: typography.fonts.display,
-    fontSize: typography.sizes.xl,
-    color: colors.fg.primary,
+  // Dome text
+  domeTitle: {
+    fontFamily:    typography.fonts.display,
+    fontSize:      typography.sizes.xl,
+    color:         colors.fg.primary,
     letterSpacing: typography.tracking.widest,
-    marginBottom: spacing.sm,
+    textAlign:     'center',
   },
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.lg,
-  },
-  statBadge: {
-    alignItems: 'center',
-  },
-  statValue: {
-    fontFamily: typography.fonts.mono,
-    fontSize: typography.sizes.lg,
-    color: colors.accent.cyan,
-    letterSpacing: typography.tracking.wide,
-  },
-  statLabel: {
-    fontFamily: typography.fonts.display,
-    fontSize: typography.sizes.xs,
-    color: colors.fg.muted,
-    letterSpacing: typography.tracking.wider,
-    marginTop: 2,
-  },
-  statDivider: {
-    width: 1,
-    height: 28,
-    backgroundColor: colors.border.default,
+  backArrow: {
+    fontSize: 22,
+    color:    colors.fg.primary,
+    padding:  spacing.sm,
   },
 
   // Dev banner
   devBanner: {
-    backgroundColor: colors.semantic.warning,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.md,
-    alignItems: 'center',
+    position:         'absolute',
+    left:             0,
+    right:            0,
+    backgroundColor:  colors.semantic.warning,
+    paddingVertical:  2,
+    alignItems:       'center',
   },
   devBannerText: {
-    fontFamily: typography.fonts.mono,
-    fontSize: typography.sizes.xs,
-    color: colors.fg.inverse,
+    fontFamily:    typography.fonts.mono,
+    fontSize:      typography.sizes.xs,
+    color:         colors.fg.inverse,
     letterSpacing: typography.tracking.wide,
   },
 
-  // Scroll
-  scroll: {
+  // Content area
+  content: {
     flex: 1,
   },
-  scrollContent: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: layout.navContentPad,
-    gap: spacing.xl,
-  },
 
-  // Constellation Path
-  pathSection: {
-    gap: spacing.md,
-  },
-  pathName: {
-    fontFamily: typography.fonts.display,
-    fontSize: typography.sizes.xs,
-    color: colors.accent.gold,
-    letterSpacing: typography.tracking.widest,
-    marginBottom: spacing.xs,
-  },
-
-  // Constellation Card
-  constellationCard: {
-    backgroundColor: colors.bg.surface,
-    borderRadius: radii.lg,
-    padding: spacing.md,
-    gap: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border.default,
-  },
-  constellationHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  constellationMeta: {
-    flex: 1,
-    gap: 2,
-  },
-  constellationName: {
-    fontFamily: typography.fonts.display,
-    fontSize: typography.sizes.sm,
-    color: colors.fg.primary,
-    letterSpacing: typography.tracking.wide,
-  },
-  constellationSymbol: {
-    fontFamily: typography.fonts.body,
-    fontSize: typography.sizes.xs,
-    color: colors.fg.subtle,
-    letterSpacing: typography.tracking.wider,
-  },
-  completePill: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-    borderRadius: radii.full,
-  },
-  completePillText: {
-    fontFamily: typography.fonts.display,
-    fontSize: typography.sizes.xs,
-    letterSpacing: typography.tracking.wide,
-  },
-
-  // Stars
-  starList: {
-    gap: spacing.xs,
-    marginTop: spacing.xs,
-  },
-  starRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderTopWidth: 1,
-    borderTopColor: colors.border.default,
-  },
-  starDot: {
-    fontSize: typography.sizes.xs,
-    color: colors.accent.gold,
-    marginTop: 2,
-  },
-  starInfo: {
-    flex: 1,
-    gap: 2,
-  },
-  starTitle: {
-    fontFamily: typography.fonts.body,
-    fontSize: typography.sizes.base,
-    color: colors.fg.primary,
-  },
-  starDate: {
-    fontFamily: typography.fonts.body,
-    fontSize: typography.sizes.xs,
-    color: colors.fg.muted,
-  },
-  starLux: {
-    fontFamily: typography.fonts.mono,
-    fontSize: typography.sizes.xs,
-    color: colors.accent.gold,
-    letterSpacing: typography.tracking.wide,
-  },
-
-  // Pending Milestones
-  pendingSection: {
-    gap: spacing.sm,
-  },
-  sectionHeading: {
-    fontFamily: typography.fonts.display,
-    fontSize: typography.sizes.xs,
-    color: colors.fg.muted,
-    letterSpacing: typography.tracking.widest,
-    marginBottom: spacing.xs,
-  },
-  milestoneRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.bg.card,
-    borderRadius: radii.md,
-    padding: spacing.md,
-    gap: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border.default,
-  },
-  milestoneInfo: {
-    flex: 1,
-    gap: 4,
-  },
-  milestoneTitle: {
-    fontFamily: typography.fonts.body,
-    fontSize: typography.sizes.base,
-    color: colors.fg.primary,
-  },
-  rejectionNote: {
-    fontFamily: typography.fonts.body,
-    fontSize: typography.sizes.xs,
-    color: colors.semantic.danger,
-  },
-  statusPill: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-    borderRadius: radii.full,
-    borderWidth: 1,
-  },
-  statusPillText: {
-    fontFamily: typography.fonts.display,
-    fontSize: typography.sizes.xs,
-    letterSpacing: typography.tracking.wide,
-  },
-
-  // Empty / Loading / Error
   centered: {
-    flex: 1,
-    alignItems: 'center',
+    flex:           1,
+    alignItems:     'center',
     justifyContent: 'center',
-    gap: spacing.md,
-    padding: spacing.xl,
+    gap:            spacing.md,
+    padding:        spacing.xl,
   },
   loadingText: {
-    fontFamily: typography.fonts.display,
-    fontSize: typography.sizes.xs,
-    color: colors.fg.muted,
+    fontFamily:    typography.fonts.display,
+    fontSize:      typography.sizes.xs,
+    color:         colors.fg.muted,
     letterSpacing: typography.tracking.widest,
-    marginTop: spacing.sm,
+    marginTop:     spacing.sm,
   },
   errorTitle: {
-    fontFamily: typography.fonts.display,
-    fontSize: typography.sizes.md,
-    color: colors.semantic.danger,
+    fontFamily:    typography.fonts.display,
+    fontSize:      typography.sizes.md,
+    color:         colors.semantic.danger,
     letterSpacing: typography.tracking.wider,
   },
   errorDetail: {
-    fontFamily: typography.fonts.body,
-    fontSize: typography.sizes.sm,
-    color: colors.fg.muted,
-    textAlign: 'center',
+    fontFamily:  typography.fonts.body,
+    fontSize:    typography.sizes.sm,
+    color:       colors.fg.muted,
+    textAlign:   'center',
   },
-  emptyConstellations: {
-    padding: spacing.xl,
-    alignItems: 'center',
-    gap: spacing.sm,
+
+  // ── Empty state ────────────────────────────────────────────────────────────
+  plusWrapper: {
+    position:       'absolute',
+    bottom:         '18%',
+    left:           0,
+    right:          0,
+    alignItems:     'center',
+    gap:            spacing.md,
+  },
+  plusGlow: {
+    position:        'absolute',
+    alignSelf:       'center',
+    backgroundColor: 'rgba(232,177,74,0.22)',
+  },
+  plusRing: {
+    borderWidth:     2,
+    borderColor:     colors.accent.gold,
+    alignItems:      'center',
+    justifyContent:  'center',
+    backgroundColor: 'transparent',
+  },
+  plusInner: {
     backgroundColor: colors.bg.surface,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.border.default,
+    alignItems:      'center',
+    justifyContent:  'center',
   },
-  emptyTitle: {
-    fontFamily: typography.fonts.display,
-    fontSize: typography.sizes.md,
-    color: colors.fg.muted,
-    letterSpacing: typography.tracking.widest,
+  plusText: {
+    fontSize:  32,
+    color:     colors.fg.primary,
+    fontWeight: '300',
+    lineHeight: 36,
   },
-  emptyBody: {
+  createLabel: {
+    fontFamily:    typography.fonts.body,
+    fontSize:      typography.sizes.sm,
+    color:         colors.fg.muted,
+    letterSpacing: typography.tracking.wider,
+  },
+
+  // ── Goal input sheet ───────────────────────────────────────────────────────
+  goalContainer: {
+    flex:            1,
+    alignItems:      'center',
+    paddingTop:      spacing.xl,
+    paddingHorizontal: spacing.lg,
+    gap:             spacing.md,
+  },
+  goalOrb: {
+    width:           90,
+    height:          90,
+    borderRadius:    45,
+    backgroundColor: colors.accent.gold,
+    shadowColor:     colors.accent.gold,
+    shadowOffset:    { width: 0, height: 0 },
+    shadowOpacity:   0.6,
+    shadowRadius:    20,
+    elevation:       10,
+    marginBottom:    spacing.sm,
+  },
+  goalLabel: {
+    fontFamily:    typography.fonts.display,
+    fontSize:      typography.sizes.sm,
+    color:         colors.fg.muted,
+    letterSpacing: typography.tracking.wider,
+    marginBottom:  spacing.xs,
+  },
+  goalList: {
+    width:           '100%',
+    maxHeight:       320,
+    backgroundColor: colors.bg.surface,
+    borderRadius:    radii.lg,
+    borderWidth:     1,
+    borderColor:     colors.border.default,
+    overflow:        'hidden',
+  },
+  goalListContent: {
+    paddingVertical: spacing.xs,
+  },
+  goalItem: {
+    paddingVertical:   spacing.sm,
+    paddingHorizontal: spacing.md,
+  },
+  goalItemBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.default,
+  },
+  goalItemSelected: {
+    backgroundColor: colors.bg.card,
+  },
+  goalItemText: {
     fontFamily: typography.fonts.body,
-    fontSize: typography.sizes.sm,
-    color: colors.fg.subtle,
-    textAlign: 'center',
-    lineHeight: typography.sizes.sm * typography.lineHeights.relaxed,
+    fontSize:   typography.sizes.base,
+    color:      colors.fg.muted,
+    textAlign:  'center',
   },
-  emptyHint: {
-    fontFamily: typography.fonts.body,
-    fontSize: typography.sizes.xs,
-    color: colors.fg.subtle,
-    paddingLeft: spacing.xs,
+  goalPhaseNote: {
+    fontFamily:  typography.fonts.body,
+    fontSize:    typography.sizes.xs,
+    color:       colors.fg.subtle,
+    textAlign:   'center',
+    fontStyle:   'italic',
+  },
+  goalDismiss: {
+    paddingVertical:   spacing.sm,
+    paddingHorizontal: spacing.lg,
+  },
+  goalDismissText: {
+    fontFamily:    typography.fonts.display,
+    fontSize:      typography.sizes.xs,
+    color:         colors.fg.muted,
+    letterSpacing: typography.tracking.wider,
   },
 });
