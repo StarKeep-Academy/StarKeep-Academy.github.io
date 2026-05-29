@@ -1,260 +1,166 @@
 /**
  * features/starmap/components/NorthStarScreen.tsx
  *
- * Zoom 0 — North Star Screen.
- * Shows: purpose statement, momentum signals (last star, most active constellation),
- * next-step card, and the North Star ★ icon that opens the Full Sky (Zoom 1).
+ * Zoom 0 — the North Star screen.
+ * Appears when user taps the gold North Star glyph in the sky.
  *
- * STARMAP_SPEC §2 — read only. Phase 4 adds goal editing.
+ * Layout (top to bottom):
+ *   Gold star icon
+ *   Purpose statement (dominant, user's own words)
+ *   Thin divider
+ *   Momentum stats (last star date, most active constellation)
+ *   "Your next step" card (navigates to that star)
  */
 
-import { useMemo } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { colors, typography, spacing, radii } from '../../../design-system/tokens';
-import type { StarMap, Constellation } from '../index';
-import type { AvatarProfile } from '../../avatar/index';
-
-// ─── Props ────────────────────────────────────────────────────────────────────
+import React from 'react';
+import {
+  View, Text, TouchableOpacity, StyleSheet,
+  Animated, Pressable,
+} from 'react-native';
+import Svg, { Circle, Path } from 'react-native-svg';
+import { colors, spacing, typography, radii } from '../../../design-system/tokens';
 
 interface Props {
-  starMap:             StarMap;
-  avatar:              AvatarProfile | undefined;
-  onOpenSky:           () => void;   // navigate to Zoom 1
-  onOpenConstellation: (id: string) => void;
+  visible:         boolean;
+  goal:            string;
+  lastStarDate:    string;      // e.g. "2 days ago"
+  mostActiveConst: string;      // e.g. "DIGITAL FOUNDATION"
+  nextStepTitle:   string;      // e.g. "BUILD MVP PROTOTYPE"
+  nextStepFrom:    string;      // e.g. "← DIGITAL FOUNDATION"
+  onClose:         () => void;
+  onNextStepTap:   () => void;
 }
 
-// ─── Compute helpers ──────────────────────────────────────────────────────────
-
-function getLastStarDate(starMap: StarMap): Date | null {
-  const all = starMap.constellation_paths
-    .flatMap(p => p.constellations)
-    .flatMap(c => c.stars);
-  if (!all.length) return null;
-  return new Date(
-    Math.max(...all.map(s => new Date(s.completed_at).getTime()))
-  );
-}
-
-function getMostActiveConstellation(starMap: StarMap): Constellation | null {
-  const all = starMap.constellation_paths.flatMap(p => p.constellations);
-  if (!all.length) return null;
-
-  return all.reduce<Constellation | null>((best, c) => {
-    const cMax = c.stars.reduce(
-      (m, s) => Math.max(m, new Date(s.completed_at).getTime()), 0
-    );
-    if (!best) return c;
-    const bMax = best.stars.reduce(
-      (m, s) => Math.max(m, new Date(s.completed_at).getTime()), 0
-    );
-    return cMax > bMax ? c : best;
-  }, null);
-}
-
-function getNextStep(starMap: StarMap): {
-  milestoneId: string;
-  title: string;
-  constellationId: string | null;
-  constellationName: string | null;
-} | null {
-  // Priority per spec: active first, then pending
-  const next =
-    starMap.pending_milestones.find(m => m.status === 'active') ??
-    starMap.pending_milestones.find(m => m.status === 'pending');
-  if (!next) return null;
-
-  let constellationName: string | null = null;
-  if (next.constellation_id) {
-    const found = starMap.constellation_paths
-      .flatMap(p => p.constellations)
-      .find(c => c.id === next.constellation_id);
-    constellationName = found?.name ?? null;
-  }
-
-  return {
-    milestoneId:      next.id,
-    title:            next.title,
-    constellationId:  next.constellation_id,
-    constellationName,
-  };
-}
-
-function formatRelative(date: Date): string {
-  const diffMs   = Date.now() - date.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  if (diffDays === 0) return 'today';
-  if (diffDays === 1) return '1 day ago';
-  if (diffDays < 30)  return `${diffDays} days ago`;
-  const months = Math.floor(diffDays / 30);
-  if (months < 12)    return `${months} month${months > 1 ? 's' : ''} ago`;
-  const years = Math.floor(diffDays / 365);
-  return `${years} year${years > 1 ? 's' : ''} ago`;
-}
-
-// ─── Component ────────────────────────────────────────────────────────────────
-
-export function NorthStarScreen({ starMap, avatar, onOpenSky, onOpenConstellation }: Props) {
-  const purposeText = avatar?.north_star_goal || avatar?.purpose || '';
-  const lastStarDate    = useMemo(() => getLastStarDate(starMap), [starMap]);
-  const mostActive      = useMemo(() => getMostActiveConstellation(starMap), [starMap]);
-  const nextStep        = useMemo(() => getNextStep(starMap), [starMap]);
-
-  const handleNextStepPress = () => {
-    if (nextStep?.constellationId) {
-      onOpenConstellation(nextStep.constellationId);
-    } else {
-      onOpenSky();
-    }
-  };
+export function NorthStarScreen({
+  visible, goal, lastStarDate, mostActiveConst,
+  nextStepTitle, nextStepFrom,
+  onClose, onNextStepTap,
+}: Props) {
+  if (!visible) return null;
 
   return (
-    <View style={styles.container}>
+    <Pressable style={styles.overlay} onPress={onClose}>
+      <Pressable style={styles.content} onPress={e => e.stopPropagation()}>
 
-      {/* Purpose statement — dominant, emotional */}
-      {purposeText ? (
-        <Text style={styles.purpose}>{purposeText}</Text>
-      ) : (
-        <Text style={styles.purposeEmpty}>
-          Your North Star goal is not set yet.{'\n'}Complete your avatar setup to begin.
-        </Text>
-      )}
+        {/* North Star icon */}
+        <View style={styles.starIcon}>
+          <Svg width={48} height={48} viewBox="0 0 200 200">
+            <Circle cx={99.5} cy={100.165} r={58.5} fill="#C9A84C" />
+            <Path
+              fillRule="evenodd"
+              clipRule="evenodd"
+              d="M77.9684 96.3219L60.4045 99.5L77.1903 102.537C59.801 138.985 52.1947 170.25 60.1609 175.302C66.8448 179.541 82.5948 164.124 99.3281 138.516L100 142.997L101.078 135.806C101.488 135.164 101.899 134.516 102.309 133.862C109.309 139.701 116.044 141.857 120.707 138.899C127.781 134.413 127.962 119.508 122.032 102.678L139.596 99.5L122.81 96.4627C140.199 60.0154 147.805 28.7505 139.839 23.698C133.155 19.4589 117.405 34.8756 100.672 60.4841L100 56.0033L98.9218 63.194C98.5118 63.8363 98.1015 64.4844 97.6908 65.1383C90.6908 59.2988 83.9559 57.1432 79.2929 60.1006C72.2193 64.587 72.0376 79.4923 77.9684 96.3219ZM82.2002 159.261C87.4568 153.106 93.171 145.321 98.9965 136.304L98.0309 129.864C93.0367 124.698 88.0937 117.821 83.8486 109.744C82.6962 107.551 81.6391 105.353 80.6791 103.169L78.6871 102.808C70.9559 118.955 65.1575 134.071 61.7869 146.315C59.6604 154.039 58.5246 160.534 58.4444 165.386C58.4043 167.813 58.6303 169.746 59.0779 171.187C59.5215 172.615 60.1507 173.469 60.8808 173.932C61.6109 174.395 62.5988 174.567 63.9466 174.275C65.3066 173.98 66.9431 173.229 68.836 171.977C72.6211 169.475 77.1738 165.147 82.2002 159.261ZM82.4231 103.484C83.2454 105.302 84.1364 107.128 85.0956 108.953C88.8884 116.17 93.2316 122.385 97.6371 127.238L94.4003 105.651L82.4231 103.484ZM101.991 131.576C101.909 131.503 101.827 131.429 101.745 131.356L105.6 105.651L117.739 103.455C116.817 105.279 115.872 107.113 114.904 108.953C110.664 117.02 106.313 124.615 101.991 131.576ZM103.125 132.556C103.438 132.818 103.751 133.073 104.063 133.319C110.652 138.532 116.323 139.854 119.987 137.53C123.651 135.206 125.445 129.15 124.63 120.275C124.154 115.082 122.794 109.155 120.58 102.941L119.549 103.127C118.449 105.321 117.316 107.527 116.151 109.744C111.878 117.875 107.489 125.534 103.125 132.556ZM119.321 95.8315L121.313 96.1919C129.044 80.0453 134.843 64.9289 138.213 52.6855C140.34 44.961 141.475 38.4657 141.556 33.6136C141.596 31.1869 141.37 29.2545 140.922 27.8133C140.479 26.385 139.849 25.5309 139.119 25.0678C138.389 24.6048 137.401 24.4333 136.053 24.7254C134.693 25.0201 133.057 25.7714 131.164 27.0228C127.379 29.5252 122.826 33.8534 117.8 39.7387C112.543 45.8936 106.829 53.6794 101.004 62.6962L101.969 69.1355C106.963 74.3017 111.906 81.1792 116.151 89.2563C117.304 91.4491 118.361 93.6466 119.321 95.8315ZM102.363 71.7618C106.768 76.6152 111.112 82.8304 114.904 90.0471C115.864 91.872 116.755 93.6984 117.577 95.5159L105.6 93.3487L102.363 71.7618ZM98.0092 67.4242C98.091 67.4971 98.1727 67.5705 98.2545 67.6444L94.4003 93.3487L82.2615 95.5451C83.1834 93.721 84.1283 91.8874 85.0956 90.0471C89.3356 81.9795 93.6867 74.3849 98.0092 67.4242ZM96.8751 66.4439C92.5111 73.4661 88.1221 81.1252 83.8486 89.2563C82.6838 91.4726 81.5509 93.6795 80.4512 95.8727L79.4204 96.0592C77.2058 89.8455 75.8463 83.918 75.3697 78.7252C74.5553 69.8502 76.3486 63.7944 80.0129 61.4704C83.6771 59.1464 89.3479 60.4682 95.9373 65.6806C96.249 65.9272 96.5617 66.1817 96.8751 66.4439Z"
+              fill="white"
+            />
+          </Svg>
+        </View>
 
-      <View style={styles.divider} />
+        {/* Purpose statement — dominant */}
+        <Text style={styles.purpose}>{goal}</Text>
 
-      {/* Momentum signals */}
-      <View style={styles.momentum}>
-        {lastStarDate ? (
-          <Text style={styles.momentumLine}>
-            Last star:{' '}
-            <Text style={styles.momentumValue}>{formatRelative(lastStarDate)}</Text>
+        {/* Divider */}
+        <View style={styles.divider} />
+
+        {/* Momentum */}
+        <View style={styles.stats}>
+          <Text style={styles.statRow}>
+            Last star earned:{' '}
+            <Text style={styles.statHighlight}>{lastStarDate}</Text>
           </Text>
-        ) : (
-          <Text style={styles.momentumLine}>No stars earned yet</Text>
-        )}
-
-        {mostActive && mostActive.stars.length > 0 && (
-          <Text style={styles.momentumLine}>
+          <Text style={styles.statRow}>
             Most active:{' '}
-            <Text style={[styles.momentumValue, { color: colors.accent.cyan }]}>
-              {mostActive.name}
-            </Text>
+            <Text style={styles.statHighlight}>{mostActiveConst}</Text>
           </Text>
-        )}
-      </View>
+        </View>
 
-      {/* Next step card */}
-      {nextStep && (
-        <Pressable
-          style={({ pressed }) => [styles.nextStep, pressed && { opacity: 0.75 }]}
-          onPress={handleNextStepPress}
-        >
-          <Text style={styles.nextStepLabel}>YOUR NEXT STEP</Text>
-          <Text style={styles.nextStepTitle}>{nextStep.title}</Text>
-          {nextStep.constellationName && (
-            <Text style={styles.nextStepConstellation}>
-              → {nextStep.constellationName}
-            </Text>
-          )}
-        </Pressable>
-      )}
+        {/* Next step card */}
+        <TouchableOpacity style={styles.nextCard} onPress={onNextStepTap} activeOpacity={0.7}>
+          <Text style={styles.nextLabel}>YOUR NEXT STEP</Text>
+          <Text style={styles.nextAction}>{nextStepTitle}</Text>
+          <Text style={styles.nextFrom}>{nextStepFrom}</Text>
+        </TouchableOpacity>
 
-      {/* North Star icon — collapses minimap / opens Full Sky */}
-      <Pressable style={styles.northStarBtn} onPress={onOpenSky}>
-        <Text style={styles.northStarGlyph}>★</Text>
       </Pressable>
-
-    </View>
+    </Pressable>
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
-  container: {
-    flex:    1,
-    padding: spacing.lg,
+  overlay: {
+    position:        'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(14,14,22,0.94)',
+    zIndex:          13,
+    alignItems:      'center',
+    justifyContent:  'center',
+    padding:         spacing.xl,
   },
-
+  content: {
+    alignItems: 'center',
+    maxWidth:   420,
+  },
+  starIcon: {
+    marginBottom: spacing.md,
+  },
   purpose: {
-    fontFamily:    typography.fonts.display,
-    fontSize:      typography.sizes.xl,
     color:         colors.fg.primary,
-    letterSpacing: typography.tracking.wide,
-    lineHeight:    typography.sizes.xl * typography.lineHeights.normal,
+    fontSize:      15,
+    letterSpacing: 3,
     textAlign:     'center',
-    paddingHorizontal: spacing.md,
-    marginTop:     spacing.xl,
-  },
-  purposeEmpty: {
-    fontFamily:    typography.fonts.body,
-    fontSize:      typography.sizes.md,
-    color:         colors.fg.subtle,
-    textAlign:     'center',
-    lineHeight:    typography.sizes.md * typography.lineHeights.relaxed,
-    marginTop:     spacing.xl,
-    paddingHorizontal: spacing.lg,
-  },
-
-  divider: {
-    height:           1,
-    backgroundColor:  colors.border.default,
-    marginVertical:   spacing.xl,
-    marginHorizontal: spacing.md,
-  },
-
-  momentum: {
-    gap:              spacing.xs,
-    paddingHorizontal: spacing.md,
-  },
-  momentumLine: {
-    fontFamily: typography.fonts.body,
-    fontSize:   typography.sizes.sm,
-    color:      colors.fg.muted,
-  },
-  momentumValue: {
-    color: colors.fg.primary,
-  },
-
-  nextStep: {
-    marginTop:        spacing.xl,
-    backgroundColor:  colors.bg.surface,
-    borderRadius:     radii.lg,
-    padding:          spacing.md,
-    gap:              spacing.xs,
-    borderWidth:      1,
-    borderColor:      colors.border.default,
-  },
-  nextStepLabel: {
+    lineHeight:    26,
+    maxWidth:      380,
+    marginBottom:  spacing.lg,
     fontFamily:    typography.fonts.display,
-    fontSize:      typography.sizes.xs,
-    color:         colors.fg.muted,
-    letterSpacing: typography.tracking.widest,
   },
-  nextStepTitle: {
-    fontFamily: typography.fonts.body,
-    fontSize:   typography.sizes.base,
-    color:      colors.fg.primary,
+  divider: {
+    width:           50,
+    height:          1,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    marginBottom:    spacing.lg,
   },
-  nextStepConstellation: {
-    fontFamily: typography.fonts.body,
-    fontSize:   typography.sizes.xs,
-    color:      colors.accent.cyan,
+  stats: {
+    alignItems:   'center',
+    marginBottom: spacing.lg,
+    gap:          8,
   },
-
-  northStarBtn: {
-    position:    'absolute',
-    bottom:      spacing.xl,
-    right:       spacing.lg,
-    width:       40,
-    height:      40,
-    alignItems:  'center',
-    justifyContent: 'center',
+  statRow: {
+    color:         colors.fg.subtle,
+    fontSize:      9,
+    letterSpacing: 2,
+    textAlign:     'center',
+    lineHeight:    22,
   },
-  northStarGlyph: {
-    fontSize:        24,
-    color:           colors.accent.gold,
-    textShadowColor: colors.accent.gold,
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 10,
+  statHighlight: {
+    color: colors.accent.cyan,
+  },
+  nextCard: {
+    backgroundColor:   'rgba(45,108,223,0.1)',
+    borderWidth:       1,
+    borderColor:       'rgba(45,108,223,0.26)',
+    borderRadius:      radii.md,
+    paddingVertical:   spacing.md,
+    paddingHorizontal: spacing.lg,
+    alignItems:        'center',
+    maxWidth:          280,
+    width:             '100%',
+  },
+  nextLabel: {
+    color:         colors.fg.subtle,
+    fontSize:      7,
+    letterSpacing: 4,
+    marginBottom:  5,
+    fontFamily:    typography.fonts.display,
+  },
+  nextAction: {
+    color:         colors.accent.cyan,
+    fontSize:      10,
+    letterSpacing: 2,
+    marginBottom:  3,
+    fontFamily:    typography.fonts.display,
+  },
+  nextFrom: {
+    color:         colors.fg.subtle,
+    fontSize:      8,
+    letterSpacing: 1,
   },
 });

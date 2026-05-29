@@ -11,7 +11,8 @@
       "Bash(npx expo *)",
       "Bash(npm install *)",
       "Bash(node -e \"const p = require\\('./package.json'\\); console.log\\(p.dependencies['react-native-svg'] || 'NOT INSTALLED'\\)\")",
-      "Bash(node -e \"const p = require\\('./package.json'\\); console.log\\('react-native-svg:', p.dependencies['react-native-svg']\\)\")"
+      "Bash(node -e \"const p = require\\('./package.json'\\); console.log\\('react-native-svg:', p.dependencies['react-native-svg']\\)\")",
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\('skia:', p.dependencies['@shopify/react-native-skia']\\); console.log\\('gesture:', p.dependencies['react-native-gesture-handler']\\);\")"
     ]
   }
 }

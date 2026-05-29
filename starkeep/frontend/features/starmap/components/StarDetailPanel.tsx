@@ -1,314 +1,286 @@
 /**
  * features/starmap/components/StarDetailPanel.tsx
  *
- * Zoom 3 — Star Detail (read-only for Phase 3).
- * Mobile: slides up from the bottom as a sheet.
- * Web:    slides in from the right as a side panel.
+ * The side panel that slides in from the right when a star is tapped.
+ * Contains: status, title, planet checklist, evidence upload, submit button.
  *
- * STARMAP_SPEC §5 — completed star state only in Phase 3.
- * Phase 4 adds: evidence display, submit flow, planet checklist.
+ * Slides in from right using Animated.Value.
+ * Width: 340px (used by useStarMapState to calculate center offset).
  */
 
-import { useRef, useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
-  View,
-  Text,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Animated,
-  Platform,
-  useWindowDimensions,
+  View, Text, ScrollView, TouchableOpacity,
+  Animated, StyleSheet, Pressable,
 } from 'react-native';
-import { colors, typography, spacing, radii } from '../../../design-system/tokens';
-import type { Star } from '../index';
+import { colors, spacing, typography, radii } from '../../../design-system/tokens';
+import { StarNode } from '../hooks/useStarMapState';
+import { PlanetChecklist } from './PlanetChecklist';
+import { EvidenceUploader } from './EvidenceUploader';
 
-// ─── Props ────────────────────────────────────────────────────────────────────
+export const PANEL_WIDTH = 340;
 
 interface Props {
-  star:    Star;
-  onClose: () => void;
+  open:           boolean;
+  star:           StarNode | null;
+  onClose:        () => void;
+  onTogglePlanet: (starId: string, idx: number) => void;
+  onAddEvidence:  (starId: string) => void;
+  onSubmit:       (starId: string) => void;
+  onAiSplit:      (starId: string) => void;
 }
 
-// ─── Shared panel content ─────────────────────────────────────────────────────
+export function StarDetailPanel({
+  open, star, onClose,
+  onTogglePlanet, onAddEvidence, onSubmit, onAiSplit,
+}: Props) {
+  const slideAnim = useRef(new Animated.Value(PANEL_WIDTH)).current;
 
-function PanelContent({ star, onClose }: Props) {
-  const date = new Date(star.completed_at).toLocaleDateString('en-US', {
-    weekday: 'long',
-    month:   'long',
-    day:     'numeric',
-    year:    'numeric',
-  });
+  useEffect(() => {
+    Animated.timing(slideAnim, {
+      toValue:         open ? 0 : PANEL_WIDTH,
+      duration:        320,
+      useNativeDriver: true,
+    }).start();
+  }, [open]);
+
+  if (!star) return null;
+
+  const statusColor = {
+    approved:  colors.semantic.success,
+    submitted: colors.semantic.warning,
+    active:    colors.accent.cyan,
+    pending:   colors.fg.subtle,
+  }[star.status] ?? colors.fg.subtle;
+
+  const statusLabel = {
+    approved:  `✓ COMPLETED${star.completedDate ? ` · ${star.completedDate}` : ''}`,
+    submitted: 'SUBMITTED — AWAITING VALIDATION',
+    active:    'IN PROGRESS',
+    pending:   'PENDING',
+  }[star.status] ?? 'PENDING';
+
+  const allPlanetsDone = star.planets.length > 0 && star.planets.every(p => p.done);
+  const hasEvidence    = star.evidence.length > 0;
 
   return (
-    <ScrollView
-      style={styles.scroll}
-      contentContainerStyle={styles.scrollContent}
-      showsVerticalScrollIndicator={false}
-      bounces={false}
-    >
-      {/* Close row */}
-      <View style={styles.closeRow}>
-        <Pressable onPress={onClose} style={styles.closeBtn}>
-          <Text style={styles.closeBtnText}>✕</Text>
-        </Pressable>
-      </View>
+    <Animated.View style={[styles.panel, { transform: [{ translateX: slideAnim }] }]}>
+      {/* Close button */}
+      <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+        <Text style={styles.closeBtnText}>×</Text>
+      </TouchableOpacity>
 
-      {/* Star glyph + title */}
-      <View style={styles.titleRow}>
-        <Text style={styles.starGlyph}>★</Text>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+
+        {/* Status */}
+        <Text style={[styles.status, { color: statusColor }]}>{statusLabel}</Text>
+
+        {/* Title */}
         <Text style={styles.title}>{star.title}</Text>
-      </View>
 
-      {/* Description */}
-      {star.description ? (
-        <Text style={styles.description}>{star.description}</Text>
-      ) : null}
+        {/* LUX pill — approved only */}
+        {star.status === 'approved' && star.lux && (
+          <View style={styles.luxPill}>
+            <Text style={styles.luxPillText}>◆ +{star.lux} LUX</Text>
+          </View>
+        )}
 
-      <View style={styles.divider} />
+        {/* Description */}
+        <Text style={styles.desc}>{star.desc}</Text>
 
-      {/* Completion info */}
-      <View style={styles.completionSection}>
-        <Text style={styles.completedLabel}>COMPLETED</Text>
-        <Text style={styles.completedDate}>{date}</Text>
-      </View>
+        {/* ── Planet checklist (incomplete stars only) ── */}
+        {star.status !== 'approved' && star.planets.length > 0 && (
+          <>
+            <Text style={styles.sectionLabel}>PLANETS</Text>
+            <PlanetChecklist
+              planets={star.planets}
+              onToggle={idx => onTogglePlanet(star.id, idx)}
+            />
+            {allPlanetsDone && (
+              <View style={styles.allDonePrompt}>
+                <Text style={styles.allDoneTitle}>◆ ALL PLANETS COMPLETE</Text>
+                <Text style={styles.allDoneHint}>Submit star-level evidence below</Text>
+              </View>
+            )}
+          </>
+        )}
 
-      {/* LUX earned */}
-      {star.lux_issued > 0 && (
-        <View style={styles.luxRow}>
-          <Text style={styles.luxLabel}>LUX EARNED</Text>
-          <Text style={styles.luxValue}>+{star.lux_issued}</Text>
-        </View>
-      )}
+        {/* ── Evidence ── */}
+        {star.status !== 'approved' ? (
+          <>
+            <Text style={styles.sectionLabel}>EVIDENCE</Text>
+            <EvidenceUploader
+              evidence={star.evidence}
+              onAdd={() => onAddEvidence(star.id)}
+            />
+          </>
+        ) : (
+          <>
+            <Text style={styles.sectionLabel}>EVIDENCE SUBMITTED</Text>
+            {star.evidence.map((e, i) => (
+              <Text key={i} style={styles.evidenceItem}>📎 {e.label}</Text>
+            ))}
+          </>
+        )}
 
-      <View style={styles.divider} />
+        {/* ── Archived planets (approved) ── */}
+        {star.status === 'approved' && star.planets.length > 0 && (
+          <>
+            <Text style={styles.sectionLabel}>PLANETS ARCHIVED</Text>
+            <PlanetChecklist planets={star.planets} readOnly />
+          </>
+        )}
 
-      {/* Evidence section — read-only placeholder */}
-      <View style={styles.evidenceSection}>
-        <Text style={styles.evidenceLabel}>EVIDENCE SUBMITTED</Text>
-        <Text style={styles.evidencePlaceholder}>
-          Evidence details available in Phase 4.
-        </Text>
-      </View>
-    </ScrollView>
+        {/* ── Submit button ── */}
+        {star.status !== 'approved' && (
+          <Pressable
+            style={[styles.submitBtn, !hasEvidence && styles.submitBtnDisabled]}
+            onPress={() => hasEvidence && onSubmit(star.id)}
+          >
+            <Text style={styles.submitBtnText}>SUBMIT FOR VALIDATION</Text>
+          </Pressable>
+        )}
+
+        {/* ── AI split button ── */}
+        {star.status !== 'approved' && (
+          <Pressable style={styles.aiBtn} onPress={() => onAiSplit(star.id)}>
+            <Text style={styles.aiBtnText}>◆ AI: SUGGEST HOW TO SPLIT THIS STAR</Text>
+          </Pressable>
+        )}
+
+      </ScrollView>
+    </Animated.View>
   );
 }
-
-// ─── Mobile: bottom sheet ─────────────────────────────────────────────────────
-
-function MobileSheet({ star, onClose }: Props) {
-  const slideAnim = useRef(new Animated.Value(400)).current;
-
-  useEffect(() => {
-    Animated.spring(slideAnim, {
-      toValue:  0,
-      friction: 9,
-      tension:  60,
-      useNativeDriver: true,
-    }).start();
-  }, []);
-
-  return (
-    <View style={styles.mobileOverlay}>
-      <Pressable style={styles.backdrop} onPress={onClose} />
-      <Animated.View style={[styles.mobilePanel, { transform: [{ translateY: slideAnim }] }]}>
-        <View style={styles.handle} />
-        <PanelContent star={star} onClose={onClose} />
-      </Animated.View>
-    </View>
-  );
-}
-
-// ─── Web: right side panel ───────────────────────────────────────────────────
-
-function WebSidePanel({ star, onClose }: Props) {
-  const { height: H } = useWindowDimensions();
-  const arcH          = H / 3;  // dome height approximation
-  const slideAnim     = useRef(new Animated.Value(400)).current;
-
-  useEffect(() => {
-    Animated.spring(slideAnim, {
-      toValue:  0,
-      friction: 9,
-      tension:  60,
-      useNativeDriver: true,
-    }).start();
-  }, []);
-
-  return (
-    <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none">
-      <Pressable
-        style={[StyleSheet.absoluteFillObject, styles.backdrop]}
-        onPress={onClose}
-      />
-      <Animated.View
-        style={[
-          styles.webPanel,
-          {
-            top:       arcH,
-            transform: [{ translateX: slideAnim }],
-          },
-        ]}
-      >
-        <PanelContent star={star} onClose={onClose} />
-      </Animated.View>
-    </View>
-  );
-}
-
-// ─── Main export — platform-switched ─────────────────────────────────────────
-
-export function StarDetailPanel(props: Props) {
-  return Platform.OS === 'web'
-    ? <WebSidePanel {...props} />
-    : <MobileSheet  {...props} />;
-}
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  // Shared
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.50)',
-  },
-  scroll:        { flex: 1 },
-  scrollContent: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom:     spacing.xl,
-  },
-
-  // Mobile sheet
-  mobileOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'flex-end',
-  },
-  mobilePanel: {
-    backgroundColor:      colors.bg.surface,
-    borderTopLeftRadius:  radii.xl,
-    borderTopRightRadius: radii.xl,
-    maxHeight:            '72%',
-    borderTopWidth:       1,
-    borderColor:          colors.border.default,
-  },
-  handle: {
-    width:           40,
-    height:          4,
-    borderRadius:    2,
-    backgroundColor: colors.border.strong,
-    alignSelf:       'center',
-    marginTop:       spacing.sm,
-    marginBottom:    spacing.xs,
-  },
-
-  // Web side panel
-  webPanel: {
+  panel: {
     position:        'absolute',
+    top:             0,
     right:           0,
-    bottom:          0,
-    width:           360,
+    width:           PANEL_WIDTH,
+    height:          '100%',
     backgroundColor: colors.bg.surface,
     borderLeftWidth: 1,
-    borderTopWidth:  1,
-    borderColor:     colors.border.default,
-    borderTopLeftRadius: radii.xl,
-    zIndex:          50,
-  },
-
-  // Content
-  closeRow: {
-    alignItems:      'flex-end',
-    paddingVertical: spacing.xs,
+    borderLeftColor: 'rgba(168,230,255,0.1)',
+    zIndex:          12,
   },
   closeBtn: {
-    padding: spacing.xs,
+    position: 'absolute',
+    top:      14,
+    right:    14,
+    zIndex:   1,
+    padding:  4,
   },
   closeBtnText: {
+    color:    colors.fg.subtle,
     fontSize: 16,
-    color:    colors.fg.muted,
   },
-
-  titleRow: {
-    flexDirection: 'row',
-    alignItems:    'flex-start',
-    gap:           spacing.sm,
+  scroll: {
+    paddingTop:        52,
+    paddingBottom:     24,
+    paddingHorizontal: spacing.md,
+  },
+  status: {
+    fontSize:      8,
+    letterSpacing: 3,
     marginBottom:  spacing.sm,
   },
-  starGlyph: {
-    fontSize:  typography.sizes.lg,
-    color:     colors.accent.gold,
-    marginTop: 2,
-  },
   title: {
-    flex:          1,
-    fontFamily:    typography.fonts.display,
-    fontSize:      typography.sizes.md,
     color:         colors.fg.primary,
-    letterSpacing: typography.tracking.wide,
-    lineHeight:    typography.sizes.md * typography.lineHeights.normal,
-  },
-
-  description: {
-    fontFamily:   typography.fonts.body,
-    fontSize:     typography.sizes.base,
-    color:        colors.fg.muted,
-    lineHeight:   typography.sizes.base * typography.lineHeights.relaxed,
-    marginBottom: spacing.sm,
-  },
-
-  divider: {
-    height:          1,
-    backgroundColor: colors.border.default,
-    marginVertical:  spacing.md,
-  },
-
-  completionSection: { gap: 4 },
-  completedLabel: {
+    fontSize:      12,
+    letterSpacing: 2,
+    marginBottom:  spacing.sm,
+    lineHeight:    18,
     fontFamily:    typography.fonts.display,
-    fontSize:      typography.sizes.xs,
-    color:         colors.fg.muted,
-    letterSpacing: typography.tracking.widest,
   },
-  completedDate: {
-    fontFamily: typography.fonts.body,
-    fontSize:   typography.sizes.base,
-    color:      colors.fg.primary,
+  luxPill: {
+    flexDirection:     'row',
+    alignSelf:         'flex-start',
+    backgroundColor:   'rgba(232,177,74,0.1)',
+    borderWidth:       1,
+    borderColor:       'rgba(232,177,74,0.28)',
+    borderRadius:      20,
+    paddingVertical:   3,
+    paddingHorizontal: spacing.sm,
+    marginBottom:      spacing.sm,
   },
-
-  luxRow: {
-    flexDirection:   'row',
-    alignItems:      'center',
-    justifyContent:  'space-between',
-    marginTop:       spacing.sm,
-    backgroundColor: colors.bg.card,
-    borderRadius:    radii.md,
-    padding:         spacing.md,
-    borderWidth:     1,
-    borderColor:     colors.border.default,
-  },
-  luxLabel: {
-    fontFamily:    typography.fonts.display,
-    fontSize:      typography.sizes.xs,
-    color:         colors.fg.muted,
-    letterSpacing: typography.tracking.widest,
-  },
-  luxValue: {
-    fontFamily:    typography.fonts.mono,
-    fontSize:      typography.sizes.lg,
+  luxPillText: {
     color:         colors.accent.gold,
-    letterSpacing: typography.tracking.wide,
+    fontSize:      9,
+    letterSpacing: 1,
+    fontFamily:    typography.fonts.mono,
   },
-
-  evidenceSection: { gap: spacing.xs },
-  evidenceLabel: {
-    fontFamily:    typography.fonts.display,
-    fontSize:      typography.sizes.xs,
+  desc: {
     color:         colors.fg.muted,
-    letterSpacing: typography.tracking.widest,
+    fontSize:      10,
+    letterSpacing: 0.5,
+    lineHeight:    17,
+    marginBottom:  spacing.xs,
   },
-  evidencePlaceholder: {
-    fontFamily: typography.fonts.body,
-    fontSize:   typography.sizes.sm,
-    color:      colors.fg.subtle,
+  sectionLabel: {
+    color:         colors.accent.cyan,
+    fontSize:      8,
+    letterSpacing: 4,
+    marginTop:     spacing.md,
+    marginBottom:  spacing.sm,
+  },
+  evidenceItem: {
+    color:           colors.accent.cyan,
+    fontSize:        9,
+    letterSpacing:   0.5,
+    paddingVertical: 4,
+  },
+  allDonePrompt: {
+    backgroundColor: 'rgba(232,177,74,0.07)',
+    borderWidth:     1,
+    borderColor:     'rgba(232,177,74,0.22)',
+    borderRadius:    radii.sm,
+    padding:         spacing.sm,
+    marginTop:       spacing.sm,
+    alignItems:      'center',
+  },
+  allDoneTitle: {
+    color:         colors.accent.gold,
+    fontSize:      9,
+    letterSpacing: 2,
+  },
+  allDoneHint: {
+    color:         colors.fg.subtle,
+    fontSize:      8,
+    marginTop:     2,
+    letterSpacing: 1,
+  },
+  submitBtn: {
+    backgroundColor: 'rgba(45,108,223,0.14)',
+    borderWidth:     1,
+    borderColor:     'rgba(45,108,223,0.38)',
+    borderRadius:    radii.sm,
+    padding:         spacing.sm + 2,
+    alignItems:      'center',
+    marginTop:       spacing.sm,
+  },
+  submitBtnDisabled: {
+    opacity: 0.28,
+  },
+  submitBtnText: {
+    color:         colors.accent.cyan,
+    fontSize:      9,
+    letterSpacing: 3,
+    fontFamily:    typography.fonts.display,
+  },
+  aiBtn: {
+    borderWidth:   1,
+    borderColor:   'rgba(232,177,74,0.22)',
+    borderRadius:  radii.sm,
+    padding:       spacing.sm,
+    alignItems:    'center',
+    marginTop:     spacing.sm,
+  },
+  aiBtnText: {
+    color:         colors.accent.gold,
+    fontSize:      8,
+    letterSpacing: 2,
+    fontFamily:    typography.fonts.display,
   },
 });

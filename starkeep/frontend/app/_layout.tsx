@@ -14,6 +14,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
 import { Syncopate_400Regular, Syncopate_700Bold } from '@expo-google-fonts/syncopate';
 import { SpaceMono_400Regular } from '@expo-google-fonts/space-mono/400Regular';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useAuthStore } from '../features/auth/store';
 
 // Prevent native splash screen from auto-hiding before fonts + auth are ready
@@ -53,8 +54,10 @@ export default function RootLayout() {
   if (!fontsLoaded || !authReady) return null;
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <Stack screenOptions={{ headerShown: false }} />
-    </QueryClientProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <QueryClientProvider client={queryClient}>
+        <Stack screenOptions={{ headerShown: false }} />
+      </QueryClientProvider>
+    </GestureHandlerRootView>
   );
 }

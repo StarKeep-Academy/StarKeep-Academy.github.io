@@ -1,656 +1,621 @@
 /**
  * app/(shell)/star-maps/index.tsx
  *
- * Phase 3 — Star Map screens.
+ * Star Maps screen.
  *
- * Layout: dome header (identical geometry to RadialNav) always visible.
- * Content area below dome varies by state:
+ * Hook wiring:
+ *   useStarMapState      — all navigation + data state
+ *   useStarMapPan        — pan gestures + smooth lerp
+ *   useStarMapAnimations — Animated.loop values for glow + orbit
  *
- *   empty  → EmptyStarMap  (wireframe image 1: + button + arc)
- *            → GoalInputSheet  (wireframe image 2: gold orb + suggestions)
- *   loaded → zoom navigation (0 = NorthStar, 1 = FullSky, 2 = Constellation, 3 = StarDetail)
- *
- * Phase 4 will wire GoalInputSheet to the creation API.
+ * Dome geometry mirrors RadialNav exactly:
+ *   arcH = H/3, R = max(W*0.76, 400), cy = arcH − R
+ *   A large View circle whose centre sits above the screen produces
+ *   the identical responsive arc on every device size.
  */
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  Pressable,
-  StyleSheet,
-  Animated,
-  useWindowDimensions,
-  ActivityIndicator,
+  View, Text, StyleSheet, TouchableOpacity,
+  useWindowDimensions, Modal, TextInput, Pressable,
 } from 'react-native';
+import Svg, { Circle, Line } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import { useAuthStore } from '../../../features/auth/store';
-import { useAvatar } from '../../../features/avatar/index';
-import {
-  useStarMap,
-  type StarMap,
-  type Constellation,
-  type Star,
-} from '../../../features/starmap/index';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { colors, typography, spacing, radii } from '../../../design-system/tokens';
-import { NorthStarScreen }    from '../../../features/starmap/components/NorthStarScreen';
-import { FullSkyView }        from '../../../features/starmap/components/FullSkyView';
-import { ConstellationView }  from '../../../features/starmap/components/ConstellationView';
-import { StarDetailPanel }    from '../../../features/starmap/components/StarDetailPanel';
 
-// ─── Zoom state ───────────────────────────────────────────────────────────────
+import { useStarMapState, STAR_OFFSETS, MAX_STARS_PER_CONST }
+  from '../../../features/starmap/hooks/useStarMapState';
+import { useStarMapPan }
+  from '../../../features/starmap/hooks/useStarMapPan';
+import { useStarMapAnimations }
+  from '../../../features/starmap/hooks/useStarMapAnimations';
 
-type ZoomState =
-  | { level: 1 }
-  | { level: 0 }
-  | { level: 2; constellationId: string }
-  | { level: 3; constellationId: string; starId: string };
+import { StarMapCanvas }             from '../../../features/starmap/components/StarMapCanvas';
+import { StarDetailPanel }           from '../../../features/starmap/components/StarDetailPanel';
+import { NorthStarScreen }           from '../../../features/starmap/components/NorthStarScreen';
+import { GoalInputModal }            from '../../../features/starmap/components/GoalInputModal';
+import { ConstellationConfirmModal } from '../../../features/starmap/components/ConstellationConfirmModal';
 
-// ─── Dev mock data ────────────────────────────────────────────────────────────
-
-const DEV_STAR_MAP: StarMap = {
-  avatar_id:           '00000000-0000-0000-0000-000000000002',
-  total_stars:         3,
-  total_constellations: 1,
-  constellation_paths: [
-    {
-      id:   '00000000-0000-0000-0000-000000000010',
-      name: 'Digital Futures Arc',
-      constellations: [
-        {
-          id:           '00000000-0000-0000-0000-000000000020',
-          name:         'Creative Technology',
-          symbol:       'wolf',
-          completed_at: '2026-03-01T00:00:00Z',
-          angle_deg:    45,
-          radius:       0.70,
-          is_north_star: false,
-          stars: [
-            { id: '00000000-0000-0000-0000-000000000030', title: 'Completed 3D Printing 101',      description: 'Built and operated a FDM printer for rapid prototyping.', completed_at: '2026-02-01T00:00:00Z', lux_issued: 14, x: 0.25, y: 0.30 },
-            { id: '00000000-0000-0000-0000-000000000031', title: 'Built a sustainable lamp prototype', description: 'Designed a solar-powered lamp from recycled materials.',  completed_at: '2026-02-15T00:00:00Z', lux_issued: 16, x: 0.72, y: 0.28 },
-            { id: '00000000-0000-0000-0000-000000000032', title: 'Distributed lamps to 5 households', description: 'Community distribution with photographic evidence.',       completed_at: '2026-03-01T00:00:00Z', lux_issued: 22, x: 0.50, y: 0.72 },
-          ],
-        },
-      ],
-    },
-  ],
-  pending_milestones: [
-    { id: '00000000-0000-0000-0000-000000000040', title: 'Plant a community garden',           status: 'active',    validation_status: 'not_submitted',  constellation_id: null },
-    { id: '00000000-0000-0000-0000-000000000041', title: 'Document solar panel installation',  status: 'submitted', validation_status: 'pending_review', constellation_id: '00000000-0000-0000-0000-000000000020' },
-    { id: '00000000-0000-0000-0000-000000000042', title: 'Community water filtration proposal', status: 'rejected', validation_status: 'rejected',       constellation_id: null, rejection_feedback: 'Please add more evidence photos of the installation process.' },
-  ],
-};
-
-// Toggle this to test the empty state in dev:
-// const DEV_DATA = { ...DEV_STAR_MAP, constellation_paths: [], pending_milestones: [] };
-const DEV_DATA = DEV_STAR_MAP;
-
-// ─── Goal input mock suggestions ─────────────────────────────────────────────
-
-const GOAL_SUGGESTIONS = [
-  'Create a gamified sustainability app',
-  'Build a farming robot',
-  'Create a community townhall',
-  'Design an urban food forest',
-  'Develop renewable energy curriculum',
-  'Build accessible tech for elderly',
-  'Launch a youth coding program',
-];
-
-// ─── Dome geometry (same formula as RadialNav) ───────────────────────────────
+// ─── Dome geometry (mirrors RadialNav exactly) ────────────────────────────────
 
 function useDome() {
   const { width: W, height: H } = useWindowDimensions();
-  const { top: safeTop }        = useSafeAreaInsets();
-
   return useMemo(() => {
-    const cx   = W / 2;
     const arcH = H / 3;
     const R    = Math.max(W * 0.76, 400);
     const cy   = arcH - R;
-    return { W, H, cx, cy, R, arcH, safeTop };
-  }, [W, H, safeTop]);
+    return { R, cx: W / 2, cy, arcH };
+  }, [W, H]);
 }
 
-// ─── Main Screen ──────────────────────────────────────────────────────────────
+// ─── Screen ───────────────────────────────────────────────────────────────────
 
-export default function StarMapsScreen() {
-  const avatarId = useAuthStore(s => s.avatarId);
-  const { data: starMap, isLoading, isError, error } = useStarMap(avatarId ?? '');
-  const { data: avatar } = useAvatar(avatarId ?? '');
+export default function StarMapScreen() {
+  const { width, height } = useWindowDimensions();
+  const vertBias = height / 6; // shifts zoom-2 content below the dome
+  const insets    = useSafeAreaInsets();
+  const dome      = useDome();
 
-  const [zoom,          setZoom]          = useState<ZoomState>({ level: 1 });
-  const [showGoalInput, setShowGoalInput] = useState(false);
-  const contentOpacity = useRef(new Animated.Value(1)).current;
+  const S     = useStarMapState();
+  const pan   = useStarMapPan();
+  const anims = useStarMapAnimations();
 
-  const dome        = useDome();
-  const orbitRadius = dome.H / 2 - dome.cy;
-
-  const isConnectionRefused =
-    __DEV__ && isError && (error as Error)?.message === 'Failed to fetch';
-  const displayData = isConnectionRefused ? DEV_DATA : starMap;
-  const showError   = isError && !isConnectionRefused;
-
-  const isEmpty =
-    displayData &&
-    displayData.constellation_paths.length === 0 &&
-    displayData.pending_milestones.length === 0;
-
-  // ── Navigation helpers ─────────────────────────────────────────────────────
-
-  const goToNorthStar    = () => setZoom({ level: 0 });
-  const goToSky          = () => setZoom({ level: 1 });
-  const goToConstellation = (id: string)  => setZoom({ level: 2, constellationId: id });
-  const goToStar         = (cid: string, sid: string) =>
-    setZoom({ level: 3, constellationId: cid, starId: sid });
-
-  // Derive selected data from zoom state
-  const selectedConstellation: Constellation | undefined = useMemo(() => {
-    if (!displayData) return undefined;
-    if (zoom.level !== 2 && zoom.level !== 3) return undefined;
-    return displayData.constellation_paths
-      .flatMap(p => p.constellations)
-      .find(c => c.id === zoom.constellationId);
-  }, [displayData, zoom]);
-
-  const selectedStar: Star | undefined = useMemo(() => {
-    if (zoom.level !== 3) return undefined;
-    return selectedConstellation?.stars.find(s => s.id === zoom.starId);
-  }, [selectedConstellation, zoom]);
-
-  const pendingForConstellation = useMemo(() => {
-    if (!displayData || (zoom.level !== 2 && zoom.level !== 3)) return [];
-    return displayData.pending_milestones.filter(
-      m => m.constellation_id === (zoom as { constellationId: string }).constellationId
-    );
-  }, [displayData, zoom]);
-
-  // ── Zoom transition animation ──────────────────────────────────────────────
-
+  // Wire setPanTarget from pan hook into state hook
   useEffect(() => {
-    contentOpacity.setValue(0);
-    Animated.timing(contentOpacity, {
-      toValue:         1,
-      duration:        280,
-      useNativeDriver: true,
-    }).start();
-  }, [zoom.level, showGoalInput]);
+    S.setPanTargetRef.current = pan.setPanTarget;
+  }, [pan.setPanTarget]);
 
-  // ── Zoom header state ──────────────────────────────────────────────────────
+  // New constellation modal (+ button when hasNorthStar)
+  const [showNewConst, setShowNewConst] = useState(false);
+  // Add star modal (zoom 2, + button in constellation view)
+  const [showAddStar,  setShowAddStar]  = useState(false);
 
-  const zoomLabel =
-    zoom.level === 0 ? 'NORTH STAR'
-    : zoom.level === 2 || zoom.level === 3 ? (selectedConstellation?.name.toUpperCase() ?? 'CONSTELLATION')
-    : null;  // null = show "STAR MAPS" (levels 1 + empty state)
+  const domeSubtitle =
+    S.zoom === 2 && S.selectedConst !== null
+      ? S.constellations[S.selectedConst]?.name ?? ''
+      : '';
 
-  const canGoBack = zoom.level !== 1 || showGoalInput;
+  const showBack = S.zoom === 2 || S.showNorthStarScreen;
 
   const handleBack = () => {
-    if (showGoalInput) { setShowGoalInput(false); return; }
-    if (zoom.level === 0) { setZoom({ level: 1 }); return; }
-    if (zoom.level === 2) { setZoom({ level: 1 }); return; }
-    if (zoom.level === 3) { setZoom({ level: 2, constellationId: (zoom as any).constellationId }); return; }
-    router.back();
+    if (S.showNorthStarScreen) {
+      S.setShowNorthStarScreen(false);
+    } else if (S.zoom === 2) {
+      S.exitConstellation();
+    }
   };
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  const handlePlusPress = () => {
+    if (S.hasNorthStar) {
+      // North Star already set — open constellation creator
+      setShowNewConst(true);
+    } else {
+      // No North Star yet — open goal-setting flow
+      S.setShowGoalModal(true);
+    }
+  };
+
+  const handleAddConstellation = (name: string) => {
+    S.addConstellation(name);
+    setShowNewConst(false);
+  };
+
+  const expandedStarData = S.expandedStar ? S.getStar(S.expandedStar) : null;
+
+  const constStarCount = S.selectedConst !== null
+    ? S.getConstStars(S.selectedConst).length : 0;
+  const showAddStarBtn = S.zoom === 2 && S.selectedConst !== null
+    && !S.panelOpen && constStarCount < MAX_STARS_PER_CONST;
 
   return (
-    <View style={styles.container}>
+    <GestureHandlerRootView style={styles.root}>
+      <View style={styles.container}>
 
-      {/* Dome — absolute, always on top ─────────────────────────────────── */}
-      <View pointerEvents="none" style={{
-        position:        'absolute',
-        width:           dome.R * 2,
-        height:          dome.R * 2,
-        borderRadius:    dome.R,
-        backgroundColor: colors.bg.dome,
-        left:            dome.cx - dome.R,
-        top:             dome.cy - dome.R,
-      }} />
-
-      {/* Arc outline — very subtle ring just outside the dome */}
-      <View pointerEvents="none" style={{
-        position:        'absolute',
-        width:           dome.R * 2 + 6,
-        height:          dome.R * 2 + 6,
-        borderRadius:    dome.R + 3,
-        borderWidth:     1,
-        borderColor:     'rgba(210,220,255,0.14)',
-        backgroundColor: 'transparent',
-        left:            dome.cx - dome.R - 3,
-        top:             dome.cy - dome.R - 3,
-      }} />
-
-      {/* Dome title */}
-      <View pointerEvents="none" style={{
-        position:   'absolute',
-        top:        dome.arcH * 0.28,
-        left:       0,
-        right:      0,
-        alignItems: 'center',
-      }}>
-        <Text style={styles.domeTitle}>
-          {zoomLabel ?? 'STAR MAPS'}
-        </Text>
-      </View>
-
-      {/* Back / close button */}
-      {canGoBack && (
-        <Pressable
-          style={{ position: 'absolute', top: dome.safeTop + 16, left: 16, zIndex: 20 }}
-          onPress={handleBack}
-        >
-          <Text style={styles.backArrow}>←</Text>
-        </Pressable>
-      )}
-
-      {/* Dev banner */}
-      {isConnectionRefused && (
-        <View style={[styles.devBanner, { top: dome.arcH }]}>
-          <Text style={styles.devBannerText}>DEV — MOCK DATA</Text>
+        {/* ── CANVAS (lowest layer) ── */}
+        <View style={StyleSheet.absoluteFillObject}>
+          <StarMapCanvas state={S} pan={pan} anims={anims} />
         </View>
-      )}
 
-      {/* ── Content area — padded to start below dome ───────────────────── */}
-      <Animated.View style={[styles.content, { paddingTop: dome.arcH + (isConnectionRefused ? 24 : 0), opacity: contentOpacity }]}>
+        {/* ── DOME — same View-circle approach as RadialNav ── */}
+        <View
+          pointerEvents="none"
+          style={{
+            position:        'absolute',
+            width:           dome.R * 2,
+            height:          dome.R * 2,
+            borderRadius:    dome.R,
+            backgroundColor: colors.bg.dome,
+            left:            dome.cx - dome.R,
+            top:             dome.cy - dome.R,   // arcH - 2R (large negative)
+            zIndex:          10,
+          }}
+        />
 
-        {isLoading && (
-          <View style={styles.centered}>
-            <ActivityIndicator size="large" color={colors.accent.cyan} />
-            <Text style={styles.loadingText}>LOADING STAR MAP</Text>
-          </View>
-        )}
-
-        {showError && (
-          <View style={styles.centered}>
-            <Text style={styles.errorTitle}>UNABLE TO LOAD</Text>
-            <Text style={styles.errorDetail}>{(error as Error)?.message}</Text>
-          </View>
-        )}
-
-        {!isLoading && !showError && displayData && (
-          <>
-            {/* ── EMPTY STATE ─────────────────────────────────────────── */}
-            {isEmpty && !showGoalInput && (
-              <EmptyStarMap
-                onCreateConstellation={() => setShowGoalInput(true)}
-                dome={dome}
-              />
-            )}
-
-            {/* ── GOAL INPUT (stub — Phase 4 will wire creation API) ─── */}
-            {isEmpty && showGoalInput && (
-              <GoalInputSheet
-                onDismiss={() => setShowGoalInput(false)}
-                dome={dome}
-              />
-            )}
-
-            {/* ── POPULATED — ZOOM 0: North Star ─────────────────────── */}
-            {!isEmpty && zoom.level === 0 && (
-              <NorthStarScreen
-                starMap={displayData}
-                avatar={avatar}
-                onOpenSky={goToSky}
-                onOpenConstellation={goToConstellation}
-              />
-            )}
-
-            {/* ── POPULATED — ZOOM 1: Full Sky ───────────────────────── */}
-            {!isEmpty && zoom.level === 1 && (
-              <FullSkyView
-                starMap={displayData}
-                onSelectConstellation={goToConstellation}
-                onOpenNorthStar={goToNorthStar}
-              />
-            )}
-
-            {/* ── POPULATED — ZOOM 2: Constellation ─────────────────── */}
-            {!isEmpty && zoom.level === 2 && selectedConstellation && (
-              <ConstellationView
-                constellation={selectedConstellation}
-                pendingMilestones={pendingForConstellation}
-                onBack={() => setZoom({ level: 1 })}
-                onSelectStar={sid =>
-                  goToStar((zoom as { constellationId: string }).constellationId, sid)
-                }
-              />
-            )}
-
-            {/* ── POPULATED — ZOOM 3: Star expanded ─────────────────── */}
-            {!isEmpty && zoom.level === 3 && selectedConstellation && (
-              <>
-                <ConstellationView
-                  constellation={selectedConstellation}
-                  pendingMilestones={pendingForConstellation}
-                  onBack={() => setZoom({ level: 2, constellationId: (zoom as any).constellationId })}
-                  onSelectStar={sid =>
-                    goToStar((zoom as any).constellationId, sid)
-                  }
-                />
-                {selectedStar && (
-                  <StarDetailPanel
-                    star={selectedStar}
-                    onClose={() => setZoom({ level: 2, constellationId: (zoom as any).constellationId })}
-                  />
-                )}
-              </>
-            )}
-          </>
-        )}
-      </Animated.View>
-
-      {/* Orbit ring — concentric with dome, southern tip at screen center */}
-      <View
-        pointerEvents="none"
-        style={{
-          position:        'absolute',
-          width:           orbitRadius * 2,
-          height:          orbitRadius * 2,
-          borderRadius:    orbitRadius,
-          borderWidth:     1,
-          borderColor:     'rgba(45,108,223,0.28)',
-          backgroundColor: 'transparent',
-          left:            dome.W / 2 - orbitRadius,
-          top:             dome.cy - orbitRadius,
-        }}
-      />
-    </View>
-  );
-}
-
-// ─── Empty State (wireframe image 1) ─────────────────────────────────────────
-
-function EmptyStarMap({
-  onCreateConstellation,
-  dome,
-}: {
-  onCreateConstellation: () => void;
-  dome: ReturnType<typeof useDome>;
-}) {
-  const pulseAnim = useRef(new Animated.Value(0.45)).current;
-
-  useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1.0, duration: 1600, useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 0.45, duration: 1600, useNativeDriver: true }),
-      ])
-    );
-    loop.start();
-    return () => loop.stop();
-  }, []);
-
-  const btnSize  = 68;
-  const ringSize = btnSize + 18;
-
-  return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-      <View style={styles.plusWrapper} pointerEvents="box-none">
-        <Pressable
-          style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
-          onPress={onCreateConstellation}
+        {/* ── DOME TITLE ── */}
+        <View
+          pointerEvents="none"
+          style={{
+            position:   'absolute',
+            top:        dome.arcH * 0.28,
+            left:       0,
+            right:      0,
+            zIndex:     11,
+            alignItems: 'center',
+          }}
         >
-          {/* Pulsing outer glow */}
-          <Animated.View style={[styles.plusGlow, { width: ringSize + 16, height: ringSize + 16, borderRadius: (ringSize + 16) / 2, opacity: pulseAnim }]} />
+          <Text style={styles.domeTitle}>STAR MAPS</Text>
+          {domeSubtitle ? (
+            <Text style={styles.domeSubtitle}>{domeSubtitle}</Text>
+          ) : null}
+        </View>
 
-          {/* Gold ring */}
-          <View style={[styles.plusRing, { width: ringSize, height: ringSize, borderRadius: ringSize / 2 }]}>
-            {/* Dark inner circle */}
-            <View style={[styles.plusInner, { width: btnSize, height: btnSize, borderRadius: btnSize / 2 }]}>
-              <Text style={styles.plusText}>+</Text>
-            </View>
-          </View>
-        </Pressable>
+        {/* ── BACK BUTTON ── */}
+        {showBack && (
+          <TouchableOpacity
+            style={[styles.backBtn, { top: insets.top + 10 }]}
+            onPress={handleBack}
+          >
+            <Text style={styles.backBtnText}>← BACK</Text>
+          </TouchableOpacity>
+        )}
 
-        <Text style={styles.createLabel}>create new constellation</Text>
-      </View>
-    </View>
-  );
-}
-
-// ─── Goal Input Sheet (wireframe image 2, Phase 4 stub) ──────────────────────
-
-function GoalInputSheet({
-  onDismiss,
-  dome,
-}: {
-  onDismiss: () => void;
-  dome:      ReturnType<typeof useDome>;
-}) {
-  const [selected, setSelected] = useState<number | null>(0);
-
-  return (
-    <View style={styles.goalContainer}>
-      {/* Gold North Star orb */}
-      <View style={styles.goalOrb} />
-
-      {/* Label */}
-      <Text style={styles.goalLabel}>What is your goal?:</Text>
-
-      {/* Suggestion list */}
-      <View style={styles.goalList}>
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.goalListContent}
-        >
-          {GOAL_SUGGESTIONS.map((g, i) => (
-            <Pressable
-              key={g}
-              style={[
-                styles.goalItem,
-                i < GOAL_SUGGESTIONS.length - 1 && styles.goalItemBorder,
-                selected === i && styles.goalItemSelected,
-              ]}
-              onPress={() => setSelected(i)}
+        {/* ── BOTTOM ACTION BUTTON ── */}
+        {/* Zoom 0 / 1: create or add a constellation */}
+        {S.zoom !== 2 && (
+          <View style={styles.plusContainer} pointerEvents="box-none">
+            <TouchableOpacity
+              style={styles.plusBtn}
+              onPress={handlePlusPress}
+              activeOpacity={0.8}
             >
-              <Text style={[
-                styles.goalItemText,
-                selected === i && { color: colors.fg.primary },
-              ]}>
-                {g}
+              <Svg width={50} height={50} viewBox="0 0 50 50">
+                <Circle cx={25} cy={25} r={21}
+                  fill="#111827"
+                  stroke={colors.accent.gold}
+                  strokeWidth={1.5}
+                />
+                <Circle cx={25} cy={25} r={17}
+                  fill="none"
+                  stroke="rgba(232,177,74,0.18)"
+                  strokeWidth={1}
+                />
+                <Line x1={25} y1={13} x2={25} y2={37}
+                  stroke={colors.accent.gold}
+                  strokeWidth={2} strokeLinecap="round"
+                />
+                <Line x1={13} y1={25} x2={37} y2={25}
+                  stroke={colors.accent.gold}
+                  strokeWidth={2} strokeLinecap="round"
+                />
+              </Svg>
+              <Text style={styles.plusLabel}>
+                {S.hasNorthStar ? 'NEW CONSTELLATION' : 'CREATE CONSTELLATION'}
               </Text>
-            </Pressable>
-          ))}
-        </ScrollView>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Zoom 2: add a star to the selected constellation */}
+        {showAddStarBtn && (
+          <View style={styles.plusContainer} pointerEvents="box-none">
+            <TouchableOpacity
+              style={styles.addStarBtn}
+              onPress={() => setShowAddStar(true)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.addStarText}>+ ADD STAR</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* ── SIDE PANEL ── */}
+        <StarDetailPanel
+          open={S.panelOpen}
+          star={expandedStarData ?? null}
+          onClose={S.closeStarPanel}
+          onTogglePlanet={S.togglePlanet}
+          onAddEvidence={S.addEvidence}
+          onSubmit={S.submitStar}
+          onAiSplit={(_id) => {
+            alert('AI split — connects to starkeep-ai in phase 5');
+          }}
+        />
+
+        {/* ── NORTH STAR SCREEN ── */}
+        <NorthStarScreen
+          visible={S.showNorthStarScreen}
+          goal={S.northStarGoal}
+          lastStarDate="2 days ago"
+          mostActiveConst={S.constellations[0]?.name ?? '—'}
+          nextStepTitle="BUILD MVP PROTOTYPE"
+          nextStepFrom="← DIGITAL FOUNDATION"
+          onClose={() => S.setShowNorthStarScreen(false)}
+          onNextStepTap={() => {
+            S.setShowNorthStarScreen(false);
+            if (S.constellations.length > 0) {
+              S.enterConstellation(0, vertBias);
+              setTimeout(() => S.openStarPanel('s3', width, vertBias), 350);
+            }
+          }}
+        />
+
+        {/* ── GOAL MODAL (sets North Star — first-time only) ── */}
+        <GoalInputModal
+          visible={S.showGoalModal}
+          selectedGoal={S.selectedGoal}
+          onSelectGoal={S.setSelectedGoal}
+          onConfirm={S.confirmNorthStar}
+          onDismiss={() => S.setShowGoalModal(false)}
+        />
+
+        {/* ── AI CONSTELLATION CONFIRM MODAL ── */}
+        <ConstellationConfirmModal
+          visible={S.showConfirmModal}
+          suggestion={S.suggestionQueue[0] ?? null}
+          constellationIdx={S.constellations.length}
+          onConfirm={() =>
+            S.suggestionQueue[0] && S.confirmConstellation(S.suggestionQueue[0])
+          }
+          onDismiss={S.dismissConstellation}
+        />
+
+        {/* ── NEW CONSTELLATION MODAL (manual, post-north-star) ── */}
+        <NewConstellationModal
+          visible={showNewConst}
+          constellationIdx={S.constellations.length}
+          onConfirm={handleAddConstellation}
+          onDismiss={() => setShowNewConst(false)}
+        />
+
+        {/* ── ADD STAR MODAL ── */}
+        <AddStarModal
+          visible={showAddStar}
+          starIndex={constStarCount}
+          onConfirm={(title) => {
+            if (S.selectedConst !== null) S.addStarToConst(S.selectedConst, title);
+            setShowAddStar(false);
+          }}
+          onDismiss={() => setShowAddStar(false)}
+        />
+
       </View>
+    </GestureHandlerRootView>
+  );
+}
 
-      {/* Phase 4 note */}
-      <Text style={styles.goalPhaseNote}>
-        Goal creation arrives in Phase 4 — selection is a preview.
-      </Text>
+// ─── New Constellation Modal ──────────────────────────────────────────────────
+// Lets the user manually name and add a constellation to their sky.
+// The ghost shape preview uses the same STAR_OFFSETS as the canvas.
 
-      <Pressable style={styles.goalDismiss} onPress={onDismiss}>
-        <Text style={styles.goalDismissText}>← BACK</Text>
+function NewConstellationModal({
+  visible, constellationIdx, onConfirm, onDismiss,
+}: {
+  visible:          boolean;
+  constellationIdx: number;
+  onConfirm:        (name: string) => void;
+  onDismiss:        () => void;
+}) {
+  const [name, setName] = useState('');
+
+  const shapeIdx = constellationIdx % 4;
+  const offs     = STAR_OFFSETS[shapeIdx] ?? STAR_OFFSETS[0];
+  const SCALE    = 0.36;
+  const CX5      = 45;
+  const CY5      = 38;
+
+  const handleConfirm = () => {
+    if (!name.trim()) return;
+    onConfirm(name.trim());
+    setName('');
+  };
+
+  const handleDismiss = () => {
+    setName('');
+    onDismiss();
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={handleDismiss}
+    >
+      <Pressable style={modal.overlay} onPress={handleDismiss}>
+        <Pressable style={modal.box} onPress={e => e.stopPropagation()}>
+
+          <Text style={modal.prompt}>ADD A CONSTELLATION</Text>
+          <Text style={modal.subPrompt}>
+            It will appear in your sky, orbiting your North Star.
+          </Text>
+
+          {/* Ghost shape preview */}
+          <View style={modal.preview}>
+            <Svg width={90} height={64}>
+              {offs.slice(0, -1).map((o, i) => {
+                const next = offs[i + 1];
+                if (!next) return null;
+                return (
+                  <Line key={`l-${i}`}
+                    x1={CX5 + o.x * SCALE} y1={CY5 + o.y * SCALE}
+                    x2={CX5 + next.x * SCALE} y2={CY5 + next.y * SCALE}
+                    stroke="rgba(168,230,255,0.22)" strokeWidth={0.5}
+                  />
+                );
+              })}
+              {offs.map((o, i) => (
+                <Circle key={`c-${i}`}
+                  cx={CX5 + o.x * SCALE} cy={CY5 + o.y * SCALE}
+                  r={2.5} fill="none"
+                  stroke="rgba(168,230,255,0.42)" strokeWidth={1}
+                />
+              ))}
+            </Svg>
+          </View>
+
+          {/* Name input */}
+          <Text style={modal.inputLabel}>CONSTELLATION NAME</Text>
+          <TextInput
+            style={modal.input}
+            value={name}
+            onChangeText={setName}
+            placeholder="E.G. SOLAR ORBIT"
+            placeholderTextColor="rgba(255,255,255,0.18)"
+            autoCapitalize="characters"
+            maxLength={28}
+            returnKeyType="done"
+            onSubmitEditing={handleConfirm}
+          />
+
+          {/* Buttons */}
+          <View style={modal.btnRow}>
+            <TouchableOpacity style={modal.cancelBtn} onPress={handleDismiss}>
+              <Text style={modal.cancelText}>CANCEL</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[modal.confirmBtn, !name.trim() && modal.confirmBtnDisabled]}
+              onPress={handleConfirm}
+            >
+              <Text style={modal.confirmText}>ADD ◆</Text>
+            </TouchableOpacity>
+          </View>
+
+        </Pressable>
       </Pressable>
-    </View>
+    </Modal>
+  );
+}
+
+// ─── Add Star Modal ───────────────────────────────────────────────────────────
+// Appears at zoom 2 when the user taps "+ ADD STAR". Creates a new star node
+// in the selected constellation at the next available STAR_OFFSETS position.
+
+function AddStarModal({ visible, starIndex, onConfirm, onDismiss }: {
+  visible:   boolean;
+  starIndex: number;
+  onConfirm: (title: string) => void;
+  onDismiss: () => void;
+}) {
+  const [title, setTitle] = useState('');
+
+  const handleConfirm = () => {
+    if (!title.trim()) return;
+    onConfirm(title.trim());
+    setTitle('');
+  };
+
+  const handleDismiss = () => { setTitle(''); onDismiss(); };
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={handleDismiss}
+    >
+      <Pressable style={modal.overlay} onPress={handleDismiss}>
+        <Pressable style={modal.box} onPress={e => e.stopPropagation()}>
+
+          <Text style={modal.prompt}>ADD A STAR</Text>
+          <Text style={modal.subPrompt}>
+            Star {starIndex + 1} of 5 in this constellation.
+          </Text>
+
+          <Text style={modal.inputLabel}>STAR NAME</Text>
+          <TextInput
+            style={modal.input}
+            value={title}
+            onChangeText={setTitle}
+            placeholder="E.G. LAUNCH BETA"
+            placeholderTextColor="rgba(255,255,255,0.18)"
+            autoCapitalize="characters"
+            maxLength={32}
+            returnKeyType="done"
+            onSubmitEditing={handleConfirm}
+            autoFocus
+          />
+
+          <View style={modal.btnRow}>
+            <TouchableOpacity style={modal.cancelBtn} onPress={handleDismiss}>
+              <Text style={modal.cancelText}>CANCEL</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[modal.confirmBtn, !title.trim() && modal.confirmBtnDisabled]}
+              onPress={handleConfirm}
+            >
+              <Text style={modal.confirmText}>ADD ◆</Text>
+            </TouchableOpacity>
+          </View>
+
+        </Pressable>
+      </Pressable>
+    </Modal>
   );
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  container: {
-    flex:            1,
-    backgroundColor: colors.bg.base,
-    overflow:        'hidden',
-  },
+  root:      { flex: 1 },
+  container: { flex: 1, backgroundColor: colors.bg.base },
 
-  // Dome text
   domeTitle: {
-    fontFamily:    typography.fonts.display,
-    fontSize:      typography.sizes.xl,
     color:         colors.fg.primary,
-    letterSpacing: typography.tracking.widest,
+    fontSize:      28,
+    letterSpacing: 10,
+    fontWeight:    '300',
+    fontFamily:    typography.fonts.display,
     textAlign:     'center',
   },
-  backArrow: {
-    fontSize: 22,
-    color:    colors.fg.primary,
-    padding:  spacing.sm,
-  },
-
-  // Dev banner
-  devBanner: {
-    position:         'absolute',
-    left:             0,
-    right:            0,
-    backgroundColor:  colors.semantic.warning,
-    paddingVertical:  2,
-    alignItems:       'center',
-  },
-  devBannerText: {
-    fontFamily:    typography.fonts.mono,
-    fontSize:      typography.sizes.xs,
-    color:         colors.fg.inverse,
-    letterSpacing: typography.tracking.wide,
-  },
-
-  // Content area
-  content: {
-    flex: 1,
-  },
-
-  centered: {
-    flex:           1,
-    alignItems:     'center',
-    justifyContent: 'center',
-    gap:            spacing.md,
-    padding:        spacing.xl,
-  },
-  loadingText: {
+  domeSubtitle: {
+    color:         'rgba(168,230,255,0.7)',
+    fontSize:      9,
+    letterSpacing: 5,
+    marginTop:     4,
     fontFamily:    typography.fonts.display,
-    fontSize:      typography.sizes.xs,
-    color:         colors.fg.muted,
-    letterSpacing: typography.tracking.widest,
-    marginTop:     spacing.sm,
+    textAlign:     'center',
   },
-  errorTitle: {
+
+  backBtn: {
+    position: 'absolute',
+    left:     18,
+    zIndex:   15,
+    padding:  4,
+  },
+  backBtnText: {
+    color:         'rgba(255,255,255,0.5)',
+    fontSize:      9,
+    letterSpacing: 3,
     fontFamily:    typography.fonts.display,
-    fontSize:      typography.sizes.md,
-    color:         colors.semantic.danger,
-    letterSpacing: typography.tracking.wider,
-  },
-  errorDetail: {
-    fontFamily:  typography.fonts.body,
-    fontSize:    typography.sizes.sm,
-    color:       colors.fg.muted,
-    textAlign:   'center',
   },
 
-  // ── Empty state ────────────────────────────────────────────────────────────
-  plusWrapper: {
-    position:       'absolute',
-    bottom:         '18%',
-    left:           0,
-    right:          0,
-    alignItems:     'center',
-    gap:            spacing.md,
+  plusContainer: {
+    position:   'absolute',
+    bottom:     22,
+    left:       0,
+    right:      0,
+    zIndex:     15,
+    alignItems: 'center',
   },
-  plusGlow: {
-    position:        'absolute',
-    alignSelf:       'center',
-    backgroundColor: 'rgba(232,177,74,0.22)',
+  plusBtn: {
+    alignItems: 'center',
+    gap:        5,
   },
-  plusRing: {
-    borderWidth:     2,
-    borderColor:     colors.accent.gold,
-    alignItems:      'center',
-    justifyContent:  'center',
-    backgroundColor: 'transparent',
+  plusLabel: {
+    color:         'rgba(255,255,255,0.3)',
+    fontSize:      7,
+    letterSpacing: 3,
+    fontFamily:    typography.fonts.display,
   },
-  plusInner: {
-    backgroundColor: colors.bg.surface,
-    alignItems:      'center',
-    justifyContent:  'center',
+  addStarBtn: {
+    borderWidth:  1,
+    borderColor:  'rgba(168,230,255,0.32)',
+    borderRadius: 20,
+    paddingVertical:   7,
+    paddingHorizontal: 20,
   },
-  plusText: {
-    fontSize:  32,
-    color:     colors.fg.primary,
-    fontWeight: '300',
-    lineHeight: 36,
+  addStarText: {
+    color:         colors.accent.cyan,
+    fontSize:      8,
+    letterSpacing: 3,
+    fontFamily:    typography.fonts.display,
   },
-  createLabel: {
-    fontFamily:    typography.fonts.body,
-    fontSize:      typography.sizes.sm,
-    color:         colors.fg.muted,
-    letterSpacing: typography.tracking.wider,
-  },
+});
 
-  // ── Goal input sheet ───────────────────────────────────────────────────────
-  goalContainer: {
+// Modal styles — same design language as ConstellationConfirmModal
+const modal = StyleSheet.create({
+  overlay: {
     flex:            1,
+    backgroundColor: 'rgba(0,0,0,0.68)',
     alignItems:      'center',
-    paddingTop:      spacing.xl,
-    paddingHorizontal: spacing.lg,
-    gap:             spacing.md,
+    justifyContent:  'center',
   },
-  goalOrb: {
-    width:           90,
-    height:          90,
-    borderRadius:    45,
-    backgroundColor: colors.accent.gold,
-    shadowColor:     colors.accent.gold,
-    shadowOffset:    { width: 0, height: 0 },
-    shadowOpacity:   0.6,
-    shadowRadius:    20,
-    elevation:       10,
-    marginBottom:    spacing.sm,
-  },
-  goalLabel: {
-    fontFamily:    typography.fonts.display,
-    fontSize:      typography.sizes.sm,
-    color:         colors.fg.muted,
-    letterSpacing: typography.tracking.wider,
-    marginBottom:  spacing.xs,
-  },
-  goalList: {
-    width:           '100%',
-    maxHeight:       320,
+  box: {
     backgroundColor: colors.bg.surface,
-    borderRadius:    radii.lg,
     borderWidth:     1,
-    borderColor:     colors.border.default,
-    overflow:        'hidden',
+    borderColor:     'rgba(168,230,255,0.16)',
+    borderRadius:    10,
+    width:           290,
+    padding:         spacing.lg,
+    alignItems:      'center',
   },
-  goalListContent: {
-    paddingVertical: spacing.xs,
-  },
-  goalItem: {
-    paddingVertical:   spacing.sm,
-    paddingHorizontal: spacing.md,
-  },
-  goalItemBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.default,
-  },
-  goalItemSelected: {
-    backgroundColor: colors.bg.card,
-  },
-  goalItemText: {
-    fontFamily: typography.fonts.body,
-    fontSize:   typography.sizes.base,
-    color:      colors.fg.muted,
-    textAlign:  'center',
-  },
-  goalPhaseNote: {
-    fontFamily:  typography.fonts.body,
-    fontSize:    typography.sizes.xs,
-    color:       colors.fg.subtle,
-    textAlign:   'center',
-    fontStyle:   'italic',
-  },
-  goalDismiss: {
-    paddingVertical:   spacing.sm,
-    paddingHorizontal: spacing.lg,
-  },
-  goalDismissText: {
+  prompt: {
+    color:         colors.accent.cyan,
+    fontSize:      8,
+    letterSpacing: 4,
+    marginBottom:  4,
+    textAlign:     'center',
     fontFamily:    typography.fonts.display,
-    fontSize:      typography.sizes.xs,
-    color:         colors.fg.muted,
-    letterSpacing: typography.tracking.wider,
+  },
+  subPrompt: {
+    color:         colors.fg.subtle,
+    fontSize:      8,
+    letterSpacing: 0.5,
+    marginBottom:  spacing.md,
+    textAlign:     'center',
+    lineHeight:    14,
+  },
+  preview: {
+    marginBottom: spacing.md,
+  },
+  inputLabel: {
+    color:         colors.fg.subtle,
+    fontSize:      7,
+    letterSpacing: 3,
+    marginBottom:  spacing.xs,
+    alignSelf:     'flex-start',
+    fontFamily:    typography.fonts.display,
+  },
+  input: {
+    width:           '100%',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth:     1,
+    borderColor:     'rgba(168,230,255,0.22)',
+    borderRadius:    radii.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    color:           colors.fg.primary,
+    fontSize:        10,
+    letterSpacing:   2,
+    fontFamily:      typography.fonts.display,
+    marginBottom:    spacing.md,
+  },
+  btnRow: {
+    flexDirection: 'row',
+    gap:           spacing.sm,
+    width:         '100%',
+  },
+  cancelBtn: {
+    flex:        1,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    borderRadius: radii.sm,
+    padding:     9,
+    alignItems:  'center',
+  },
+  cancelText: {
+    color:         colors.fg.subtle,
+    fontSize:      8,
+    letterSpacing: 2,
+    fontFamily:    typography.fonts.display,
+  },
+  confirmBtn: {
+    flex:            1,
+    backgroundColor: 'rgba(45,108,223,0.18)',
+    borderWidth:     1,
+    borderColor:     'rgba(45,108,223,0.42)',
+    borderRadius:    radii.sm,
+    padding:         9,
+    alignItems:      'center',
+  },
+  confirmBtnDisabled: {
+    opacity: 0.3,
+  },
+  confirmText: {
+    color:         colors.accent.cyan,
+    fontSize:      8,
+    letterSpacing: 2,
+    fontFamily:    typography.fonts.display,
   },
 });
