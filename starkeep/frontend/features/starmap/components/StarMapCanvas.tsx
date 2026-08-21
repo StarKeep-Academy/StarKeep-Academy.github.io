@@ -26,7 +26,7 @@
 
 import React, { useRef, useEffect } from 'react';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
-import { Animated } from 'react-native';
+import { Animated, Easing } from 'react-native';
 import Svg, {
   Circle, Line, Path, G, Text as SvgText, Defs, RadialGradient, Stop,
 } from 'react-native-svg';
@@ -274,9 +274,11 @@ export function StarMapCanvas({ state, pan, anims }: Props) {
               />
 
               {/* ConstLayer stays mounted while any constellation is selected.
-                  Opacity hides it at zoom 1 without destroying AnimatedG nodes. */}
+                  translateX moves it off-screen at zoom 1 instead of opacity 0 —
+                  opacity changes kill AnimatedG rotation listeners on web (same
+                  reason SkyLayer's AnimatedG is never unmounted). */}
               {state.selectedConst !== null && (
-                <G opacity={state.zoom === 2 ? 1 : 0}>
+                <G translateX={state.zoom === 2 ? 0 : -10000}>
                   <ConstLayer
                     state={state} width={width} height={height}
                     glowOpacity={glowOpacity} anims={anims}
@@ -562,42 +564,55 @@ function OrbitingPlanet({ planet, cx, cy, orbitR, totalInRing, ringIdx, planetId
   const baseAngleDeg    = (planetIdx / totalInRing) * 360 - 90;
   const speedMultiplier = 1 / (1 + ringIdx * 0.35 + planetIdx * 0.15);
 
-  // Rotate interpolation — same AnimatedG rotation pattern as sky orbit (web-compatible)
-  const animAngle = React.useMemo(() =>
-    orbitAnim.interpolate({
-      inputRange:  [0, 1],
-      outputRange: [baseAngleDeg, baseAngleDeg + 360 * speedMultiplier],
-    }),
-    [orbitAnim, baseAngleDeg, speedMultiplier]
-  );
-
-  if (planet.done) {
-    // Lock at 12-o'clock
-    const px2 = cx + Math.cos(-Math.PI / 2) * orbitR;
-    const py2 = cy + Math.sin(-Math.PI / 2) * orbitR;
-    return (
-      <G>
-        <Circle cx={px2} cy={py2} r={8} fill="rgba(168,230,255,0.12)" />
-        <Circle cx={px2} cy={py2} r={4} fill="#A8E6FF" />
-        <Circle cx={px2} cy={py2} r={6}
-          fill="none" stroke="rgba(168,230,255,0.4)" strokeWidth={0.8}
-        />
-      </G>
+  // Independent rotation per planet — not chained off shared orbitAnim.
+  // Chained interpolations lose their web listeners when any ancestor G prop changes
+  // (translateX, opacity, etc.); a private loop is immune to all parent re-renders.
+  const rotAnim = useRef(new Animated.Value(baseAngleDeg)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.timing(rotAnim, {
+        toValue:         baseAngleDeg + 360,
+        duration:        Math.round(8000 / speedMultiplier),
+        easing:          Easing.linear,
+        useNativeDriver: false,
+      })
     );
-  }
+    loop.start();
+    return () => loop.stop();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Planet starts at (cx + orbitR, cy) — 3 o'clock — and is rotated to baseAngleDeg.
-  // AnimatedG rotation spins it around the star centre. Identical to sky-rotation approach.
+  const px = cx + Math.cos(-Math.PI / 2) * orbitR;
+  const py = cy + Math.sin(-Math.PI / 2) * orbitR;
+
+  // AnimatedG must stay in the tree at all times — mounting it fresh when planet.done
+  // flips false→true→false loses the web rotation listener, same as the opacity/ConstLayer
+  // problem. Use translateX to hide the orbiting dot while keeping AnimatedG alive.
   return (
-    <AnimatedG rotation={animAngle as any} originX={cx} originY={cy}>
-      <Circle
-        cx={cx + orbitR} cy={cy}
-        r={3.5}
-        fill="rgba(168,230,255,0.06)"
-        stroke="rgba(168,230,255,0.45)"
-        strokeWidth={1.2}
-      />
-    </AnimatedG>
+    <G>
+      {/* Locked at 12-o'clock when done */}
+      {planet.done && (
+        <G>
+          <Circle cx={px} cy={py} r={8} fill="rgba(168,230,255,0.12)" />
+          <Circle cx={px} cy={py} r={4} fill="#A8E6FF" />
+          <Circle cx={px} cy={py} r={6}
+            fill="none" stroke="rgba(168,230,255,0.4)" strokeWidth={0.8}
+          />
+        </G>
+      )}
+
+      {/* Orbiting dot — AnimatedG always in tree, slid off-screen while done */}
+      <G translateX={planet.done ? -10000 : 0}>
+        <AnimatedG rotation={rotAnim as any} originX={cx} originY={cy}>
+          <Circle
+            cx={cx + orbitR} cy={cy}
+            r={3.5}
+            fill="rgba(168,230,255,0.06)"
+            stroke="rgba(168,230,255,0.45)"
+            strokeWidth={1.2}
+          />
+        </AnimatedG>
+      </G>
+    </G>
   );
 }
 

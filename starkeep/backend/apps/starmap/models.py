@@ -133,13 +133,36 @@ class Milestone(TimestampedModel):
     # Defaults to 0 until then. Never compute here — formula lives in lux/scoring.py.
     lux_issued = models.PositiveIntegerField(default=0)
 
-    # 2D placement hints for the star field visualization
-    x = models.FloatField(null=True, blank=True)  # 0.0–1.0
-    y = models.FloatField(null=True, blank=True)  # 0.0–1.0
-    # z will be added when VR client needs it (new nullable field, no migration pain)
+    # Star placement, WRITABLE (DEC-013 amended 2026-08-13): the client saves
+    # wherever the user drags a star to, and reads it back verbatim on the
+    # next load. Originally derive-only/read-only (procedural graph layout
+    # recomputed position every load, ignoring manual placement) — that
+    # meant a drag that didn't also change the edge graph had nothing to
+    # persist to, so manual repositioning silently didn't survive a reload.
+    # null = never explicitly placed; the client falls back to its own
+    # procedural layout for those.
+    #
+    # NOTE units: originally documented as 0.0-1.0 normalized (matching the
+    # mobile app's 2D SVG canvas convention). frontend-web is a real 3D
+    # scene and writes raw local-space world units instead (tens of units,
+    # not 0-1) — there is no 3D mobile consumer yet to conflict with this,
+    # but a future unified VR client will need to reconcile the two
+    # conventions. Flagged here rather than solved now.
+    x = models.FloatField(null=True, blank=True)
+    y = models.FloatField(null=True, blank=True)
+    z = models.FloatField(null=True, blank=True)
 
     # Planet ordering (STARMAP_SPEC §11): 1 = innermost orbit, null = not a planet
+    # NOTE: this is for a Milestone that is ITSELF nested as a planet of
+    # another Milestone (not yet built) — a different concept from `planets`
+    # below, which is a milestone's own inline checklist. Don't conflate.
     orbit_order = models.PositiveIntegerField(null=True, blank=True)
+
+    # Checklist steps (STARMAP_SPEC §5: "a glorified checklist, not a gating
+    # mechanism"). Shape: [{"label": str, "done": bool, "order": int}].
+    # Field names match frontend-web's planet object shape exactly, so the
+    # serializer needs no translation.
+    planets = models.JSONField(default=list)
 
     class Meta:
         ordering = ["-created_at"]
@@ -151,6 +174,46 @@ class Milestone(TimestampedModel):
 
     def __str__(self):
         return f"{self.title} [{self.status}]"
+
+
+# ─── Constellation Edge (DEC-013) ──────────────────────────────────────────────
+class ConstellationEdge(TimestampedModel):
+    """
+    One directed edge in a constellation's DAG: from_milestone must precede
+    to_milestone in sequence. Mirrors frontend-web's js/starGraph.js edge
+    shape {from, to} exactly — no translation layer needed beyond field
+    naming in the serializer.
+
+    `constellation` is denormalized (derivable from either milestone's own
+    .constellation) so the edge-replace/split/delete endpoints can bulk
+    filter/delete by one FK instead of joining through both milestones, and
+    so an edge can never silently span two different constellations.
+    """
+    constellation = models.ForeignKey(
+        Constellation, on_delete=models.CASCADE, related_name="edges"
+    )
+    from_milestone = models.ForeignKey(
+        Milestone, on_delete=models.CASCADE, related_name="outgoing_edges"
+    )
+    to_milestone = models.ForeignKey(
+        Milestone, on_delete=models.CASCADE, related_name="incoming_edges"
+    )
+
+    class Meta:
+        ordering = ["created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["constellation", "from_milestone", "to_milestone"],
+                name="unique_edge_per_constellation",
+            ),
+            models.CheckConstraint(
+                check=~models.Q(from_milestone=models.F("to_milestone")),
+                name="no_self_edge",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.from_milestone_id} → {self.to_milestone_id}"
 
 
 # ─── Evidence ─────────────────────────────────────────────────────────────────

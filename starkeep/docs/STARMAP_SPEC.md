@@ -198,25 +198,43 @@ star with planets (any status)
   → ring expands to show planets on tap
 ```
 
-### Constellation Shape Rules (LOCKED)
+### Constellation Shape Rules (SUPERSEDED by DEC-013)
 
-- Shape is determined by the AI star structure at constellation creation time.
-- Shape is stored as a set of (x, y) coordinates per star, relative to
-  constellation center. These are the star placement hints from the Star model.
-- Shape must not be changed after confirmation — it is the permanent visual identity
-  of that chapter of the user's journey.
-- As stars are added via mitosis, the shape rearranges to accommodate new nodes.
-  Existing star positions shift; the constellation redraws with an animation.
-- Shape rearrangement animation: stars slide to new positions over 400ms.
+> **⚠ Superseded.** See `DECISIONS.md` DEC-013. Constellation structure is now a
+> user-editable **directed acyclic graph** (branches, and branches that rejoin the
+> trunk). The rules below are kept for history. What still holds: the 400ms rearrangement
+> animation (for stars that have never been explicitly placed — see amendment below),
+> and that shape is structural data, never decorative.
+
+- ~~Shape is determined by the AI star structure at constellation creation time.~~
+  The AI structure is the *starting point*; the user may restructure it at any time
+  via Constellation Edit Mode.
+- ~~Shape is stored as a set of (x, y) coordinates per star.~~ ~~Position is computed
+  from the graph; `x`/`y` are output, not input.~~ **Amended 2026-08-13 (DEC-013):**
+  `x`/`y`/`z` are authored and persisted verbatim wherever the client places a star
+  (`PATCH /milestones/{id}`), not derived output. Graph-derived layout
+  (`computeLayout()`) only fills in stars that have never been explicitly positioned.
+- ~~Shape must not be changed after confirmation.~~ It is editable at any time.
+- As stars are added via mitosis, the shape rearranges to accommodate new
+  nodes — but only nodes that have no saved position yet; stars with a saved
+  `x`/`y`/`z` keep their manually-arranged spot. The constellation redraws
+  with an animation.
+- Shape rearrangement animation: stars slide to new positions over 400ms. *(still true)*
 
 ### IMPL Notes
 
 ```
-Star positions: stored as { x: float, y: float } on Milestone model (normalized)
-  range: -1.0 to 1.0 relative to constellation center
-  VR NOTE: z coordinate added later as optional field (DEC-006)
+Star positions: stored as { x: float, y: float, z: float } on Milestone model.
+  `z` has now been added (DEC-013 amendment, 2026-08-13), not merely reserved.
+  UNIT NOTE: the "-1.0 to 1.0 normalized relative to constellation center" range
+  below was the original 2D-canvas assumption. It still holds for the mobile
+  (frontend/) client, but frontend-web — the actively-developed real client —
+  is a 3D scene and writes raw local-space world units (tens of units, not
+  0–1). The two conventions are unreconciled; see DEC-013 amendment.
+  range: -1.0 to 1.0 relative to constellation center (frontend/ mobile client only)
 
-Connecting lines: drawn between stars in sequence order
+Connecting lines: drawn per graph edge (DEC-013 — was "in sequence order",
+  which assumed a single linear chain)
   color: rgba(255,255,255,0.15) incomplete
          rgba(168,230,255,0.6)  complete (cyan)
 
@@ -464,9 +482,18 @@ Step 3: once all confirmed
         original star remains — it is now the "parent" visually
         but structurally all stars are peers in the constellation
 
-LOCKED: original star is not deleted on mitosis.
+SUPERSEDED by DEC-013: original star is not deleted on mitosis.
         it becomes one star among the expanded set.
         its completion is now independent of the new stars.
+
+DEC-013 replaces the above. Offshoots are PREREQUISITES of the parent, not
+peers: they splice into the sequence AHEAD of it, in original step order.
+  parent left with no steps and no evidence  → consumed; the offshoot chain
+                                               takes over its slot entirely
+  parent left with steps or evidence         → survives, holding the
+                                               remainder, with the offshoots
+                                               sequenced ahead of it
+The panel states which will happen before the split is confirmed.
 ```
 
 ### Planet Mitosis (planet → more planets in orbit)
@@ -630,6 +657,15 @@ Auto-collapses: when user begins panning the canvas
 
 ## 10. Component Map (Frontend)
 
+> **Note:** this component map describes the React Native/Expo mobile shell
+> (`frontend/`), which is largely stubbed. The actively-developed, working Star
+> Map client — full DAG editing, mitosis, evidence, submit-for-validation — is
+> `frontend-web/` (vanilla JS + Three.js), primarily
+> `frontend-web/js/views/StarMapView.js` with graph logic in
+> `frontend-web/js/starGraph.js` and API calls in `frontend-web/js/starmapApi.js`.
+> It does not follow this component-per-file breakdown. This section's mapping
+> below is not kept in sync with it.
+
 Each component maps to a file in `frontend/features/starmap/components/`.
 
 ```
@@ -663,10 +699,22 @@ angle_deg   = FloatField()          # position in sky (0–360)
 radius      = FloatField()          # distance from North Star (normalized)
 is_north_star = BooleanField()      # True for the one North Star constellation
 
-# Milestone (Star) — already has x, y
-# Ensure x, y are set by AI at constellation generation time
+# Milestone (Star) — already has x, y, z (z added by DEC-013 amendment, 2026-08-13)
+# ~~Ensure x, y are set by AI at constellation generation time~~ SUPERSEDED:
+# x/y/z are user-authored and writable (PATCH /milestones/{id}) — the client
+# saves wherever the star is dragged to. AI/procedural layout is only the
+# fallback for a star that has never been explicitly positioned.
 # Add:
-orbit_order = IntegerField(null=True)  # for planets: 1 = innermost
+orbit_order = IntegerField(null=True)  # NOTE: implemented, but reserved for a
+  # different, not-yet-built concept (a Milestone nested as a planet of another
+  # Milestone). It is NOT what backs the Planet Orbit Layout described in §5/§7 —
+  # planets are their own JSONField checklist (see below), not relational
+  # Milestone rows, so this field is currently unused by the planet UI.
+
+# Add (not in original spec — planets are NOT separate Milestone rows):
+planets = JSONField(default=list)  # [{"label": str, "done": bool, "order": int}, ...]
+                                    # "order" here (per-item) is what drives
+                                    # innermost-first orbit placement, not orbit_order above.
 
 # Avatar — add:
 north_star_goal = TextField()       # the confirmed North Star goal text

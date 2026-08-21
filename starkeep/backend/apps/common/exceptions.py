@@ -15,6 +15,19 @@ def starkeep_exception_handler(exc, context):
     Wraps DRF's default exception handler to produce the Starkeep envelope.
     See API_CONTRACT.md for the full error shape.
     """
+    # StarkeepError (below) is a plain Exception, not a DRF APIException, so
+    # DRF's own exception_handler() doesn't recognize it and would let it
+    # propagate as an unhandled 500. Handle it explicitly first.
+    if isinstance(exc, StarkeepError):
+        errors = {
+            "type": f"https://starkeep.io/errors/{exc.status_code}",
+            "title": _status_title(exc.status_code),
+            "status": exc.status_code,
+            "detail": exc.detail,
+            "invalid_params": [],
+        }
+        return Response({"data": None, "errors": errors}, status=exc.status_code)
+
     response = exception_handler(exc, context)
 
     if response is not None:

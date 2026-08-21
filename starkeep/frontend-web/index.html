@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Starkeep Academy</title>
+
+  <!-- Required Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Michroma&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN — StarMapView's panels/modals are Tailwind-classed -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Three.js via import map (ES modules, no bundler required) — required for `import * as THREE from 'three'` in scene.js / views -->
+  <script type="importmap">
+  {
+      "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+  }
+  </script>
+
+  <!-- Modal/panel/glassmorphism system used by StarMapView -->
+  <link rel="stylesheet" href="/css/styles.css">
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body, html { width: 100%; height: 100%; overflow: hidden; background: #060911; }
+
+    #three-canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 1;
+    }
+
+    #app {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 2;
+      pointer-events: none;
+      display: flex; /* matches the reference star_map.html's <body class="... flex ...">,
+                         which StarMapView's markup (left aside + absolutely-positioned panels) assumes */
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Persistent Canvas -->
+  <canvas id="three-canvas"></canvas>
+
+  <!-- SPA View Injection Target -->
+  <div id="app"></div>
+
+  <script type="module" src="/js/main.js"></script>
+</body>
+</html>

@@ -22,6 +22,7 @@ import {
 import Svg, { Circle, Line } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { router } from 'expo-router';
 import { colors, typography, spacing, radii } from '../../../design-system/tokens';
 
 import { useStarMapState, STAR_OFFSETS, MAX_STARS_PER_CONST }
@@ -76,13 +77,15 @@ export default function StarMapScreen() {
       ? S.constellations[S.selectedConst]?.name ?? ''
       : '';
 
-  const showBack = S.zoom === 2 || S.showNorthStarScreen;
+  const showBack = true;
 
   const handleBack = () => {
     if (S.showNorthStarScreen) {
       S.setShowNorthStarScreen(false);
     } else if (S.zoom === 2) {
       S.exitConstellation();
+    } else {
+      router.back();
     }
   };
 

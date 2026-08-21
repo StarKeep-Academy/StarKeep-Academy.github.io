@@ -78,7 +78,7 @@ Error shape (RFC 7807):
 | Method | Path | Auth | Description |
 |---|---|---|---|
 | GET | `/avatars/{id}` | Required | Full avatar profile (Image 7 data) |
-| PATCH | `/avatars/{id}` | Required (owner) | Update alias, purpose, paths |
+| PATCH | `/avatars/{id}` | Required (owner) | Update alias, display_name, purpose, north_star_goal, paths |
 | POST | `/avatars/{id}/archetype` | Integration token | Sync quiz results from external repo |
 | GET | `/avatars/{id}/archetype` | Required | Get archetype profile |
 
@@ -126,6 +126,15 @@ Error shape (RFC 7807):
 }
 ```
 
+### `PATCH /avatars/{id}` Request
+
+Any subset of: `alias`, `display_name`, `purpose`, `north_star_goal`, `heroic_path`, `learning_path`. Response: the full updated Avatar (same shape as `GET /avatars/{id}`).
+
+```json
+// Request
+{ "north_star_goal": "Become a self-sustaining regenerative farmer" }
+```
+
 ---
 
 ## Star Map (VR-ready)
@@ -136,12 +145,18 @@ Error shape (RFC 7807):
 | GET | `/milestones` | Required | Paginated list, filterable by status |
 | POST | `/milestones` | Required | Create milestone |
 | GET | `/milestones/{id}` | Required | Milestone detail |
-| PATCH | `/milestones/{id}` | Required (owner) | Update title, description, constellation |
-| POST | `/milestones/{id}/submit` | Required (owner) | Submit for validation |
-| POST | `/milestones/{id}/validate` | Admin only | Validate + score (triggers LUX issuance) |
+| PATCH | `/milestones/{id}` | Required (owner) | Update title, description, constellation, planets, x/y/z placement |
+| DELETE | `/milestones/{id}` | Required (owner) | Delete milestone; heals the constellation's sequence |
+| POST | `/milestones/{id}/submit` | Required (owner) | Submit for validation (requires ≥1 evidence item) |
 | POST | `/milestones/{id}/evidence` | Required (owner) | Add evidence item |
+| POST | `/milestones/{id}/split` | Required (owner) | Mitosis: atomic split into N milestones (DEC-013) |
 | GET | `/constellations` | Required | List constellations for avatar |
+| POST | `/constellations` | Required | Create constellation (server assigns sky position) |
 | GET | `/constellations/{id}` | Required | Constellation + its stars |
+| DELETE | `/constellations/{id}` | Required (owner) | Delete constellation AND its milestones |
+| POST | `/constellations/{id}/edges` | Required (owner) | Replace constellation's edge list (DEC-013) |
+
+> `POST /milestones/{id}/validate` (admin validation + LVM scoring + LUX issuance) is Phase 6 and **not yet implemented**.
 
 ### `GET /star-maps/{avatar_id}` Response (VR-ready)
 ```json
@@ -160,15 +175,25 @@ Error shape (RFC 7807):
             "name": "Creative Technology",
             "symbol": "wolf",
             "completed_at": "2026-03-01T00:00:00Z",
+            "angle_deg": 45.0,
+            "radius": 0.6,
+            "is_north_star": false,
             "stars": [
               {
                 "id": "uuid",
                 "title": "Completed 3D Printing 101",
+                "description": "...",
                 "completed_at": "2026-02-01T00:00:00Z",
                 "lux_issued": 14,
                 "x": 0.42,
-                "y": 0.67
+                "y": 0.67,
+                "z": null,
+                "orbit_order": null,
+                "planets": []
               }
+            ],
+            "edges": [
+              { "from": "uuid", "to": "uuid" }
             ]
           }
         ]
@@ -178,14 +203,93 @@ Error shape (RFC 7807):
       {
         "id": "uuid",
         "title": "Build sustainable lamp",
+        "description": "Design and build a solar-powered community lamp",
         "status": "active",
         "validation_status": "not_submitted",
-        "constellation_id": "uuid"
+        "constellation_id": "uuid",
+        "planets": [
+          { "label": "Source materials", "done": true, "order": 1 }
+        ],
+        "evidence": [],
+        "rejection_feedback": "",
+        "x": null,
+        "y": null,
+        "z": null
       }
     ]
   }
 }
 ```
+
+`edges` is DEC-013's DAG — each `{from, to}` names a milestone id that must precede another within the same constellation. `x`/`y`/`z` on a star or pending milestone are writable (DEC-013 amended 2026-08-13): the client saves wherever it places a star/milestone and reads it back verbatim on the next load; `null` means never explicitly positioned, and the client falls back to its own procedural layout for those. They are no longer derived from `edges`.
+
+### `POST /milestones` Request / Response
+
+```json
+// Request
+{ "title": "Build sustainable lamp", "description": "...", "constellation_id": "uuid", "source": "manual" }
+// Response: the created Milestone (same shape as GET /milestones/{id})
+```
+
+### `PATCH /milestones/{id}` Request
+
+Any subset of: `title`, `description`, `constellation_id`, `planets` (full replacement array — `[{ "label", "done", "order" }]`), `x`, `y`, `z` (DEC-013 amended — writable star placement; null means never explicitly positioned, client falls back to procedural layout). `status`, `lux_issued`, `validated_at`, `validated_by`, `lvm_scores`, `rejection_feedback` are server-controlled (Phase 6) and rejected if sent. Checking a planet (`done: false → true`) auto-transitions `pending → active` server-side.
+
+### `DELETE /milestones/{id}`
+
+No body. `204 No Content` on success. The constellation's edge sequence is healed first (predecessors join directly to successors) rather than left severed.
+
+### `POST /milestones/{id}/evidence` Request / Response
+
+```json
+// Request
+{ "type": "text", "payload": "I documented the process...", "label": "Project notes" }
+// Response: the created Evidence object { id, type, payload, label, created_at }
+```
+Attaching evidence to a `pending` milestone also auto-transitions it to `active`.
+
+### `POST /milestones/{id}/submit`
+
+No body. Requires the milestone to be `pending`/`active` and have ≥1 evidence item, or returns `400`. Response: `{ "id": "uuid", "status": "submitted" }`.
+
+### `POST /milestones/{id}/split` Request / Response (Mitosis, DEC-013)
+
+```json
+// Request
+{ "offshoots": [
+  { "title": "Part A", "description": "...", "source_planet_order": 1 },
+  { "title": "Part B", "source_planet_order": 2 }
+] }
+// Response
+{
+  "consumed_parent": true,
+  "parent": null,
+  "offshoots": [ /* full Milestone objects */ ],
+  "constellation": { /* full Constellation, including its fresh edges */ }
+}
+```
+If the parent still has planets or evidence after the promoted ones are removed, it survives (`consumed_parent: false`, `parent` is the updated Milestone) and the offshoots are spliced in as its prerequisites; otherwise the parent is deleted and the offshoot chain takes its place in the sequence.
+
+### `POST /constellations` Request / Response
+
+```json
+// Request
+{ "name": "Creative Technology", "symbol": "wolf", "path_id": "uuid" }
+// Response: the created Constellation (server-assigned angle_deg/radius, empty edges)
+```
+
+### `DELETE /constellations/{id}`
+
+No body. `204 No Content` on success. Deletes the constellation AND its milestones (`Milestone.constellation` is `SET_NULL`, not `CASCADE` — this endpoint deletes the milestones explicitly rather than orphaning them). Edge rows cascade automatically.
+
+### `POST /constellations/{id}/edges` Request / Response (DEC-013)
+
+```json
+// Request — the FULL replacement edge list, not a delta
+{ "edges": [ { "from": "uuid", "to": "uuid" }, { "from": "uuid", "to": "uuid" } ] }
+// Response: the full Constellation, with the new edges
+```
+Every `from`/`to` must be a milestone belonging to this constellation, and the resulting graph must be acyclic — both are validated server-side independently of the client (`400` otherwise).
 
 ### Milestone Statuses
 ```

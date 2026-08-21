@@ -1,0 +1,43 @@
+# Local dev services only — Postgres + Redis, matching .env.example's default
+# credentials exactly. Django itself runs natively on the host (manage.py
+# runserver), not in a container, so both services publish to localhost.
+#
+# Usage:
+#   docker compose up -d      # start Postgres + Redis in the background
+#   docker compose down       # stop them (data persists in the named volumes)
+#   docker compose down -v    # stop them AND wipe the data volumes
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: starkeep
+      POSTGRES_USER: starkeep
+      POSTGRES_PASSWORD: starkeep
+    ports:
+      - "5432:5432"
+    volumes:
+      - starkeep_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U starkeep"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - starkeep_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  starkeep_postgres_data:
+  starkeep_redis_data:

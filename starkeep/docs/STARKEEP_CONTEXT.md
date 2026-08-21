@@ -192,7 +192,7 @@ These five API surfaces get extra rigor: stable JSON shapes, explicit versioning
 | -------------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | Social posts   | `/social/feed`, `/social/posts`         | Auto-generated on milestone validation. Include `hero_action_type` field for VR spatial effects. WS: `/ws/feed/` |
 | Avatar profile | `/avatars/{id}`                         | Include glyph SVG URLs (future: glTF refs). Never rename fields — add only.                                      |
-| Star Map       | `/star-maps/{avatar_id}`                | Hierarchical: paths → constellations → stars. Include `x`, `y` placement hints. WS: `/ws/star-map/{id}/`         |
+| Star Map       | `/star-maps/{avatar_id}`                | Hierarchical: paths → constellations → stars. Include `x`, `y`, `z` placement (authored per-star, DEC-013 amendment) and `edges` (the constellation's DAG edge list, DEC-013). WS: `/ws/star-map/{id}/`         |
 | LUX wallet     | `/lux/wallet/{id}`, `/lux/transactions` | Include `hero_action_type` in transaction metadata for VR particle effects.                                      |
 | Missions       | `/missions`                             | Include `location_hint` field (nullable) for future AR/VR placement.                                             |
 
@@ -221,7 +221,7 @@ Academy = the center glyph (Image 5 shows it as the "active" example).
 /(shell)/avatar          → Image 7 profile page
 /(shell)/star-maps       → milestone + constellation view
 /(shell)/academy         → stub (v1), full chat in v2+
-/(shell)/mission-log     → missions + quests (phase 4)
+/(shell)/mission-log     → missions + quests (phase 7)
 /(shell)/lux             → wallet + transactions
 /(shell)/settings        → account, notifications, accessibility
 ```
@@ -344,9 +344,9 @@ v1 stubs: transfer (501), donate (501), cashout (501)
 | 0     | Repos, CI/CD, design tokens, splash screen (all 3 targets) — **COMPLETE**    |
 | 1     | Auth: email + Google + Apple, JWT for mobile, sessions for web — **COMPLETE** |
 | 2     | Shell: radial nav menu, route stubs, home buttons — **COMPLETE**              |
-| 3     | Star Map (read): view milestones + constellations from API — **NEXT**         |
-| 4     | Star Map (write): create, edit, submit, evidence upload                       |
-| 5     | Avatar: full Image 7 profile                                                  |
+| 3     | Star Map (read): view milestones + constellations from API — **COMPLETE**     |
+| 4     | Star Map (write): create, edit, submit, evidence upload — **COMPLETE**        |
+| 5     | Avatar: full Image 7 profile — **NEXT**                                       |
 | 6     | LUX core: wallet, admin validation, LVM formula, WebSocket notify             |
 | 7     | Academy + Mission Log: full chat, missions, quests                            |
 | 8     | Hardening: 70%+ test coverage, Sentry, error states, a11y                    |

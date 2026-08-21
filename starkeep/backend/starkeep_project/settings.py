@@ -5,8 +5,15 @@ Reads all secrets from environment. Never hardcode credentials here.
 
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Loads backend/.env into the process environment if present — copy
+# .env.example to .env and fill in real values for local dev. In prod, real
+# env vars set on the host/container take precedence (load_dotenv doesn't
+# overwrite vars that are already set), so this is dev-convenience only.
+load_dotenv(BASE_DIR / ".env")
 
 # ─── Security ────────────────────────────────────────────────────────────────
 SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
@@ -147,8 +154,12 @@ CACHES = {
 }
 
 # ─── CORS ────────────────────────────────────────────────────────────────────
+# 8081/3000 = mobile app's Expo dev server (native + web preview). 5500 = the
+# frontend-web static dev server (VS Code Live Server default; adjust if you
+# serve it differently, e.g. `python -m http.server`). In production this env
+# var must be set to the real frontend domain(s) — localhost origins are dev-only.
 CORS_ALLOWED_ORIGINS = os.environ.get(
-    "CORS_ALLOWED_ORIGINS", "http://localhost:8081,http://localhost:3000"
+    "CORS_ALLOWED_ORIGINS", "http://localhost:8081,http://localhost:3000,http://localhost:5500"
 ).split(",")
 CORS_ALLOW_CREDENTIALS = True
 

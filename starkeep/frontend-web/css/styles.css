@@ -1,0 +1,1291 @@
+:root {
+    --font-display: 'Syncopate', sans-serif;
+    /* Was 'Montserrat', then 'Orbitron' — body text is now Michroma too,
+       same as --font-mono below, so titles (Syncopate) are the only thing
+       that reads visually distinct from the rest of the app. Michroma only
+       ships a single 400 weight (no Google Fonts bold), so any element that
+       sets a heavier font-weight on this family renders with the browser's
+       synthetic bold rather than a true bold face. */
+    --font-sans: 'Michroma', sans-serif;
+    /* Was 'Space Mono', then briefly a class called .font-mono — renamed to
+       .font-hud because "font-mono" collides with Tailwind's OWN built-in
+       utility class of the same name. Tailwind CDN compiles/injects its
+       utility stylesheet at runtime as it scans the DOM, which can land
+       AFTER this stylesheet in the cascade, so its default monospace stack
+       was silently winning over this variable for every .font-mono-classed
+       element — Required Steps, Sigil Color, Evidence, the HUD text, etc.
+       ".font-hud" isn't a name Tailwind owns, so there's no collision risk.
+       Kept as its own variable (not merged into --font-sans) specifically
+       so this category — HUD/tech-readout text, badges, most buttons — can
+       be changed independently later. */
+    --font-hud: 'Michroma', sans-serif;
+    --space-navy: #04060f;
+    --bg-base: #060911;
+    --electric-blue: #2D6CDF;
+    --cyan-accent: #A8E6FF;
+    --accent-cyan: #00f3ff;
+    --accent-cyan-glow: rgba(0, 243, 255, 0.5);
+    --gold-accent: #E8B14A;
+    --muted-text: rgba(168, 230, 255, 0.4);
+    --panel-bg: rgba(2, 8, 20, 0.85);
+}
+
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: var(--space-navy);
+    font-family: var(--font-sans);
+    color: #ffffff;
+    user-select: none;
+}
+
+.font-display { font-family: var(--font-display); }
+.font-hud { font-family: var(--font-hud); }
+/* Descriptions/body copy read as body text, not a HUD label — an ID rule
+   (Tailwind doesn't generate ID-based rules, so this has no collision risk)
+   rather than relying on inheriting body's font-family, which wasn't
+   landing reliably for reasons matching the .font-mono collision above. */
+#star-description { font-family: var(--font-sans); }
+/* These two HUD readouts ("MAP TRACKING ACTIVE / CURRENT PATHWAY..." and the
+   "X / X STARS COMPLETE" summary) are explicitly Space Mono, not --font-hud
+   (Michroma) — the user found Space Mono reads as more "authentic" for this
+   specific readout text. Scoped by ID rather than changing --font-hud itself,
+   since --font-hud still governs other labels (Sigil Color, Required Steps,
+   Evidence, etc.) that were NOT asked to change. */
+#hud-text, #directory-summary { font-family: 'Space Mono', monospace; }
+
+/* Every button, app-wide, uses Syncopate — regardless of whatever
+   .font-display/.font-hud/unstyled state it would otherwise fall back to.
+   Was Michroma, but Michroma reads unevenly at the small all-caps sizes most
+   buttons use (weak hinting on round vs. straight-stroke capitals). Syncopate
+   is already the app's uppercase display face, so it's a natural fit here.
+   !important is deliberate here: a bare `button` type selector has lower
+   specificity than any class (like .font-display), so without it a button
+   carrying one of those classes would win over this rule and this wouldn't
+   actually cover "all buttons" as intended. */
+button {
+    font-family: 'Syncopate', sans-serif !important;
+}
+
+/* #three-canvas and #app (view mount point) shell positioning now lives in
+   index.html's inline <style> block, owned alongside the document shell. */
+
+#canvas-container, #labels-container {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+#labels-container {
+    pointer-events: none;
+    z-index: 2;
+}
+
+.node-label {
+    position: absolute;
+    transform: translate(-50%, -100%);
+    color: var(--cyan-accent);
+    font-family: var(--font-hud);
+    font-size: 0.8rem;
+    white-space: nowrap;
+    letter-spacing: 1px;
+    pointer-events: auto;
+    cursor: pointer;
+    transition: opacity 0.3s ease, transform 0.15s ease, color 0.15s ease, text-shadow 0.15s ease;
+}
+
+.node-label:hover {
+    color: #ffffff;
+    text-shadow: 0 0 10px currentColor, 0 0 4px rgba(255, 255, 255, 0.8);
+    transform: translate(-50%, -100%) scale(1.12);
+}
+
+/* Constellation completion states — STARMAP_SPEC.md §3 */
+.node-label.is-complete {
+    color: #ffffff;
+    text-shadow: 0 0 12px rgba(255, 255, 255, 0.75);
+}
+
+.node-label.is-in-progress {
+    color: var(--accent-cyan);
+    text-shadow: 0 0 10px var(--accent-cyan-glow);
+}
+
+.node-label.is-incomplete {
+    color: rgba(168, 230, 255, 0.55);
+    text-shadow: none;
+}
+
+/* Constellation-wide hover — set programmatically (not :hover) since hovering
+   the directory row should light up the sky label too, and vice versa. */
+.node-label.is-hovered {
+    color: #ffffff;
+    text-shadow: 0 0 12px currentColor, 0 0 6px rgba(255, 255, 255, 0.85);
+}
+
+.directory-row-hovered {
+    background: rgba(0, 243, 255, 0.06) !important;
+    border-color: rgba(0, 243, 255, 0.35) !important;
+    box-shadow: 0 0 14px rgba(0, 243, 255, 0.15);
+}
+
+/* ── Constellation edit mode (DEC-013) ───────────────────────────────────
+   The star label carries a sequence badge and a renameable title. The link
+   handle is a DELIBERATELY SEPARATE element (see spawnStarMesh /
+   refreshEditBadges in StarMapView.js) positioned next to the star's own
+   screen position, not inside the title label — dragging is between stars,
+   so the handle needs to read as belonging to the star, not the title. */
+
+/* Sequence badge + title layout, shown whenever a constellation is focused —
+   NOT only in edit mode. Deliberately lighter than .is-editing below (no
+   pill background/border implying "this is draggable"), just enough to keep
+   the badge and title sitting together legibly. */
+.node-label.has-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.node-label.is-editing {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 6px 3px 3px;
+    background: rgba(2, 8, 20, 0.92);
+    border: 1px solid rgba(168, 230, 255, 0.25);
+    border-radius: 999px;
+    /* Dragging is done via an invisible circle around the star itself, not
+       the label — a grab cursor here would point at the wrong target. */
+    cursor: default;
+}
+
+.star-seq-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: rgba(0, 243, 255, 0.14);
+    border: 1px solid rgba(0, 243, 255, 0.4);
+    color: var(--accent-cyan);
+    font-family: var(--font-display);
+    font-size: 0.6rem;
+    letter-spacing: 0;
+}
+
+.star-title { cursor: text; }
+
+.star-link-handle-standalone {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(2, 8, 20, 0.85);
+    border: 1px solid rgba(232, 177, 74, 0.55);
+    color: var(--gold-accent);
+    font-size: 0.75rem;
+    line-height: 1;
+    cursor: crosshair;
+    pointer-events: auto;
+    transition: all 0.15s ease;
+}
+
+.star-link-handle-standalone:hover {
+    background: var(--gold-accent);
+    color: #060911;
+    box-shadow: 0 0 12px rgba(232, 177, 74, 0.6);
+    transform: translate(-50%, -50%) scale(1.15);
+}
+
+.star-link-handle-standalone.is-link-source {
+    border-color: var(--gold-accent);
+    box-shadow: 0 0 10px rgba(232, 177, 74, 0.5);
+}
+
+.star-link-handle-standalone.is-link-target {
+    border-color: var(--gold-accent);
+    background: var(--gold-accent);
+    color: #060911;
+    box-shadow: 0 0 16px rgba(232, 177, 74, 0.75);
+    transform: translate(-50%, -50%) scale(1.25);
+}
+
+/* Newly created / split-off stars, so they're findable the moment edit mode
+   opens rather than needing to be hunted for. */
+.node-label.is-new {
+    border-color: rgba(232, 177, 74, 0.8);
+    animation: star-new-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes star-new-pulse {
+    0%, 100% { box-shadow: 0 0 0 rgba(232, 177, 74, 0); }
+    50%      { box-shadow: 0 0 16px rgba(232, 177, 74, 0.55); }
+}
+
+.node-label.is-drag-source {
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 14px var(--accent-cyan-glow);
+    opacity: 0.85;
+}
+
+/* The star a drop would branch from. */
+.node-label.is-drop-target {
+    border-color: var(--gold-accent);
+    box-shadow: 0 0 18px rgba(232, 177, 74, 0.7);
+    transform: translate(-50%, -100%) scale(1.1);
+}
+
+.edit-hint {
+    position: absolute;
+    bottom: 108px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 30;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: rgba(2, 8, 20, 0.85);
+    border: 1px solid rgba(168, 230, 255, 0.18);
+    color: var(--muted-text);
+    font-family: var(--font-hud);
+    font-size: 0.65rem;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+.edit-toast {
+    position: absolute;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-12px);
+    z-index: 60;
+    padding: 8px 18px;
+    border-radius: 999px;
+    background: rgba(2, 8, 20, 0.95);
+    border: 1px solid rgba(0, 243, 255, 0.35);
+    color: var(--cyan-accent);
+    font-family: var(--font-hud);
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.edit-toast.is-visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Mitosis outcome preview — states up front whether the split consumes the
+   star, so the parent never disappears unannounced. */
+.mitosis-outcome {
+    margin-bottom: 10px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(168, 230, 255, 0.18);
+    background: rgba(168, 230, 255, 0.04);
+    color: var(--muted-text);
+    font-family: var(--font-hud);
+    font-size: 0.65rem;
+    line-height: 1.5;
+}
+
+.mitosis-outcome.is-consuming {
+    border-color: rgba(232, 177, 74, 0.45);
+    background: rgba(232, 177, 74, 0.07);
+    color: var(--gold-accent);
+}
+
+/* ── Zoom 0 — North Star screen (STARMAP_SPEC.md §2) ──────────────────────
+   A transparent HUD, not a scrim: the 3D sky stays visible behind it. */
+.ns-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.45s ease;
+}
+
+.ns-screen.visible {
+    opacity: 1;
+}
+
+.ns-screen.hidden {
+    display: none;
+}
+
+.ns-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    max-width: 620px;
+    padding: 0 32px;
+    text-align: center;
+    pointer-events: auto;
+}
+
+.ns-purpose-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    color: var(--muted-text);
+}
+
+.ns-purpose {
+    font-size: 1.9rem;
+    font-weight: 800;
+    line-height: 1.35;
+    letter-spacing: 0.06em;
+    color: #ffffff;
+    text-shadow: 0 0 26px rgba(0, 243, 255, 0.35);
+}
+
+.ns-divider {
+    width: 140px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(168, 230, 255, 0.45), transparent);
+}
+
+.ns-momentum {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.75rem;
+    color: rgba(168, 230, 255, 0.65);
+    letter-spacing: 0.08em;
+}
+
+/*
+ * ID selectors, not classes — .ns-momentum's color above and Tailwind's
+ * text-slate-300/text-cyan-300 utility classes are equal specificity, so
+ * which one wins depends on stylesheet load order rather than intent. These
+ * override unambiguously.
+ */
+#ns-last-star {
+    color: #e2e8f0;
+}
+
+#ns-most-active {
+    color: var(--accent-cyan);
+    text-shadow: 0 0 8px var(--accent-cyan-glow);
+}
+
+.ns-next-card {
+    margin-top: 6px;
+    min-width: 300px;
+    padding: 16px 24px;
+    background: rgba(10, 16, 30, 0.72);
+    border: 1px solid rgba(232, 177, 74, 0.4);
+    border-radius: 14px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    text-align: center;
+}
+
+.ns-next-card:hover {
+    border-color: var(--gold-accent);
+    box-shadow: 0 0 24px rgba(232, 177, 74, 0.28);
+    transform: translateY(-2px);
+}
+
+.ns-next-label {
+    font-size: 0.62rem;
+    letter-spacing: 0.28em;
+    color: var(--gold-accent);
+    margin-bottom: 8px;
+}
+
+.ns-next-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: #ffffff;
+}
+
+.ns-next-from {
+    margin-top: 6px;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    color: var(--muted-text);
+}
+
+.vignette {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    box-shadow: inset 0 0 100px rgba(0,0,0,0.8);
+    pointer-events: none;
+    z-index: 5;
+}
+
+/* Glassmorphism Buttons */
+.btn-nebula {
+    position: relative;
+    background: rgba(10, 6, 32, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 0.5px solid rgba(255, 255, 255, 0.15);
+    color: #e2e8f0;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.btn-nebula::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(45, 108, 223, 0.2) 0%, rgba(168, 230, 255, 0.1) 100%);
+    opacity: 0.5;
+    z-index: -1;
+    transition: opacity 0.4s ease;
+}
+
+.btn-nebula:hover:not(:disabled) {
+    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 0 20px rgba(45, 108, 223, 0.25);
+    color: #ffffff;
+}
+
+.btn-nebula:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.btn-nebula .glint {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 70%);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.btn-nebula:hover .glint {
+    opacity: 1;
+}
+
+/* Astrolabe Artifact Anchors */
+.astrolabe-anchor {
+    background: rgba(4, 3, 15, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.astrolabe-anchor:hover {
+    border-color: rgba(168, 230, 255, 0.4);
+    box-shadow: 0 -5px 30px rgba(45, 108, 223, 0.2), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+.orbital-ring {
+    border: 1px dashed rgba(168, 230, 255, 0.2);
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ring-1 { width: 44px; height: 44px; animation: spinClockwise 20s linear infinite; }
+.ring-2 { width: 56px; height: 56px; animation: spinCounterClockwise 25s linear infinite; }
+
+.astrolabe-anchor:hover .orbital-ring {
+    border-color: rgba(168, 230, 255, 0.6);
+    border-style: solid;
+}
+
+.astrolabe-anchor:hover .ring-1 { transform: translate(-50%, -50%) scale(1.05); animation-duration: 8s; }
+.astrolabe-anchor:hover .ring-2 { transform: translate(-50%, -50%) scale(1.1); animation-duration: 10s; }
+
+@keyframes spinClockwise {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes spinCounterClockwise {
+    0% { transform: translate(-50%, -50%) rotate(360deg); }
+    100% { transform: translate(-50%, -50%) rotate(0deg); }
+}
+
+/* Holographic Panels */
+.holo-panel {
+    background: rgba(2, 8, 20, 0.4);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 10px 0 30px rgba(0,0,0,0.3);
+}
+
+/* Star Detail Slider Panel */
+#star-detail-panel {
+    position: absolute;
+    right: -380px;
+    top: 0;
+    width: 360px;
+    height: 100%;
+    background: rgba(4, 6, 15, 0.95);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-left: 1px solid rgba(45, 108, 223, 0.3);
+    z-index: 40;
+    transition: right 0.4s cubic-bezier(0.1, 0.8, 0.25, 1);
+}
+#star-detail-panel.open {
+    right: 0;
+}
+
+.checklist-container {
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+.planet-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.checkbox {
+    width: 14px;
+    height: 14px;
+    border: 1px solid var(--cyan-accent);
+    display: inline-block;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.checkbox.checked {
+    background: var(--cyan-accent);
+    box-shadow: 0 0 6px var(--cyan-accent);
+}
+
+/* All-planets-complete prompt — STARMAP_SPEC.md §5, gold accent */
+.ready-prompt {
+    border: 1px solid rgba(232, 177, 74, 0.45);
+    background: rgba(232, 177, 74, 0.07);
+    border-radius: 12px;
+    padding: 14px 16px;
+    text-align: center;
+}
+
+.ready-prompt-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--gold-accent);
+}
+
+.ready-prompt-sub {
+    margin-top: 4px;
+    font-size: 0.7rem;
+    color: rgba(232, 177, 74, 0.75);
+}
+
+/* Mitosis / AI split rows — STARMAP_SPEC.md §7. Each row is one of the
+   star's own steps; the toggle selects it to be promoted into its own star. */
+.mitosis-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.mitosis-row.selected {
+    background: rgba(232, 177, 74, 0.06);
+    border-color: rgba(232, 177, 74, 0.35);
+}
+
+.mitosis-toggle {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+    border: 1px solid rgba(168, 230, 255, 0.35);
+    background: transparent;
+    color: #0a0f1a;
+    cursor: pointer;
+    font-size: 0.65rem;
+    line-height: 1;
+    transition: all 0.2s ease;
+}
+
+.mitosis-toggle:hover {
+    border-color: var(--accent-cyan);
+    background: rgba(0, 243, 255, 0.12);
+}
+
+.mitosis-row.selected .mitosis-toggle {
+    color: #060911;
+    background: var(--gold-accent);
+    border-color: var(--gold-accent);
+}
+
+/* Modal Overlays */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(2, 6, 16, 0.85);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    /* #app defaults to pointer-events: none (see index.html) so the canvas stays
+       clickable behind the UI; pointer-events is inherited, so every modal must
+       opt back in explicitly or its buttons are unclickable. */
+    pointer-events: auto;
+}
+
+.modal-content {
+    background: #060b18;
+    border: 1px solid var(--electric-blue);
+    box-shadow: 0 0 30px rgba(45, 108, 223, 0.2);
+    padding: 30px;
+    width: 460px;
+    max-width: 90%;
+}
+
+/* Lighter counterpart to .modal-overlay/.modal-content, for quick, low-stakes
+   text prompts (rename, create star, add step, evidence file name, create
+   constellation) — deliberately NO dark scrim or blur, so the 3D scene stays
+   fully visible behind the card instead of the whole view going black. */
+.input-card-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    pointer-events: auto;
+}
+
+.input-card {
+    background: #060b18;
+    border: 1px solid var(--electric-blue);
+    box-shadow: 0 0 40px rgba(45, 108, 223, 0.35);
+    padding: 24px;
+    width: 380px;
+    max-width: 90%;
+}
+
+.goal-option {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(168, 230, 255, 0.1);
+    padding: 12px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    text-align: left;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+}
+
+.goal-option.selected {
+    border-color: var(--gold-accent);
+    background: rgba(232, 177, 74, 0.05);
+}
+
+/* Home / Landing Shell UI */
+#ui-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.8s ease-in-out;
+}
+
+#ui-container.visible {
+    opacity: 1;
+}
+
+.header-bar {
+    position: absolute;
+    top: 25px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 1300px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: auto;
+}
+
+.back-btn-home {
+    background: rgba(10, 16, 30, 0.8);
+    border: 1px solid rgba(0, 243, 255, 0.4);
+    color: var(--accent-cyan);
+    padding: 10px 20px;
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    border-radius: 20px;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.back-btn-home:hover {
+    background: var(--accent-cyan);
+    color: var(--bg-base);
+    box-shadow: 0 0 20px var(--accent-cyan-glow);
+}
+
+.page-title {
+    font-size: 1.8rem;
+    font-weight: 900;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    text-shadow: 0 0 20px var(--accent-cyan-glow);
+}
+
+.system-status {
+    font-family: var(--font-hud);
+    font-size: 0.75rem;
+    color: var(--muted-text);
+    letter-spacing: 0.1em;
+}
+
+.control-panel {
+    position: absolute;
+    right: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 300px;
+    background: rgba(10, 16, 30, 0.75);
+    border: 1px solid rgba(0, 243, 255, 0.25);
+    backdrop-filter: blur(12px);
+    border-radius: 16px;
+    padding: 24px;
+    pointer-events: auto;
+    box-shadow: 0 0 30px rgba(0,0,0,0.8);
+}
+
+.panel-header {
+    font-size: 0.9rem;
+    font-weight: 800;
+    letter-spacing: 0.2em;
+    color: var(--accent-cyan);
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(0, 243, 255, 0.2);
+}
+
+.action-btn {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 10px;
+    background: rgba(0, 243, 255, 0.08);
+    border: 1px solid rgba(0, 243, 255, 0.3);
+    color: #ffffff;
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    text-align: left;
+}
+
+.action-btn:hover {
+    background: rgba(0, 243, 255, 0.25);
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 15px var(--accent-cyan-glow);
+    transform: translateX(-3px);
+}
+
+.footer-bar {
+    position: absolute;
+    bottom: 25px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 1300px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-hud);
+    font-size: 0.75rem;
+    color: var(--muted-text);
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    padding-top: 15px;
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   AvatarView (Phase 5) — reuses .header-bar/.back-btn-home/.page-title/
+   .system-status above; everything below is scoped to this view.
+   ──────────────────────────────────────────────────────────────────────── */
+
+.avatar-view-wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+/* Unlike .header-bar's other consumers, this view's header spans the full
+   viewport width edge-to-edge (matching the reference layout) rather than
+   being capped/centered at 1300px — scoped here so other views keep the
+   shared centered behavior. */
+.avatar-view-wrapper .header-bar {
+    left: 32px;
+    right: 32px;
+    width: auto;
+    max-width: none;
+    transform: none;
+}
+
+.avatar-grid {
+    position: absolute;
+    top: 100px;
+    bottom: 25px;
+    left: 32px;
+    right: 32px;
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    gap: 24px;
+}
+
+.avatar-card {
+    pointer-events: auto;
+    background: var(--panel-bg);
+    border: 2px solid rgba(0, 243, 255, 0.55);
+    border-radius: 14px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 34px rgba(0, 243, 255, 0.22), inset 0 0 24px rgba(0, 243, 255, 0.22);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.avatar-card::before,
+.avatar-card::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--accent-cyan);
+    pointer-events: none;
+    z-index: 2;
+}
+.avatar-card::before { top: 6px; left: 6px; border-right: none; border-bottom: none; }
+.avatar-card::after { bottom: 6px; right: 6px; border-left: none; border-top: none; }
+
+.avatar-profile-card {
+    padding: 24px;
+    justify-content: space-between;
+    align-items: center;
+    text-align: center;
+}
+
+.avatar-profile-header {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.avatar-alias-sigil {
+    width: 52px;
+    height: 52px;
+    color: var(--accent-cyan);
+    margin-bottom: 6px;
+    filter: drop-shadow(0 0 8px var(--accent-cyan-glow));
+}
+
+.avatar-alias-sigil svg {
+    width: 100%;
+    height: 100%;
+}
+
+/* Decorative backplate behind the mannequin/anchor — low opacity so it
+   never competes with the alias/name text sitting on top of it. */
+.avatar-coat-of-arms {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 280px;
+    height: 320px;
+    opacity: 0.25;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.avatar-coat-of-arms svg {
+    width: 100%;
+    height: 100%;
+    fill: none;
+    stroke: #ffffff;
+    stroke-width: 1.2;
+}
+
+.avatar-label-tiny {
+    font-family: var(--font-hud);
+    font-size: 0.65rem;
+    letter-spacing: 0.28em;
+    color: var(--accent-cyan);
+    text-transform: uppercase;
+}
+
+.avatar-alias-title {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    margin-top: 2px;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+}
+
+.avatar-divider-line {
+    width: 85%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
+    margin-top: 10px;
+}
+
+.avatar-anchor {
+    width: 200px;
+    height: 260px;
+    pointer-events: none;
+}
+
+.avatar-profile-footer {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.avatar-real-name {
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    margin: 2px 0 8px 0;
+    text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+}
+
+.avatar-powers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    max-width: 100%;
+}
+
+.avatar-power-badge {
+    background: rgba(0, 243, 255, 0.1);
+    border: 1px solid rgba(0, 243, 255, 0.35);
+    border-radius: 12px;
+    padding: 4px 10px;
+    font-family: var(--font-hud);
+    font-size: 0.65rem;
+    letter-spacing: 0.05em;
+    color: #ffffff;
+}
+
+.avatar-powers-empty {
+    font-family: var(--font-hud);
+    font-size: 0.68rem;
+    color: var(--muted-text);
+}
+
+.avatar-attributes-card {
+    padding: 24px 28px;
+}
+
+.avatar-attributes-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 16px;
+}
+
+.avatar-attributes-header h2 {
+    font-size: 1.2rem;
+    font-weight: 800;
+    letter-spacing: 0.3em;
+    text-shadow: 0 0 10px var(--accent-cyan-glow);
+}
+
+.avatar-header-dash {
+    flex: 1;
+    height: 1px;
+    background: repeating-linear-gradient(90deg, var(--accent-cyan), var(--accent-cyan) 4px, transparent 4px, transparent 8px);
+    opacity: 0.6;
+}
+
+.avatar-attributes-grid {
+    display: grid;
+    grid-template-columns: 190px 1px 1fr;
+    grid-auto-rows: auto;
+    gap: 18px 24px;
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 6px;
+    align-items: center;
+}
+
+.avatar-row-separator {
+    grid-column: 1 / -1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+    margin: -4px 0;
+}
+
+.avatar-v-divider {
+    background: linear-gradient(180deg, transparent, rgba(0, 243, 255, 0.3), transparent);
+    width: 1px;
+    height: 100%;
+}
+
+.avatar-symbolic-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    justify-content: center;
+}
+
+.avatar-attr-label {
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+}
+
+.avatar-attr-sub {
+    font-family: var(--font-hud);
+    font-size: 0.6rem;
+    color: var(--muted-text);
+    margin: 2px 0 6px;
+}
+
+.avatar-val-huge {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    color: var(--accent-cyan);
+    text-shadow: 0 0 12px var(--accent-cyan-glow);
+}
+
+.avatar-path-glyph {
+    width: 40px;
+    height: 40px;
+    margin: 0 auto;
+    color: var(--accent-cyan);
+    filter: drop-shadow(0 0 6px var(--accent-cyan-glow));
+}
+
+.avatar-path-glyph img,
+.avatar-path-glyph svg {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.avatar-purpose-icon {
+    margin: 4px auto 0;
+}
+
+.avatar-detail-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.avatar-detail-title {
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+}
+
+.avatar-detail-text {
+    font-family: var(--font-hud);
+    font-size: 0.7rem;
+    line-height: 1.6;
+    color: var(--muted-text);
+}
+
+.avatar-detail-note {
+    font-family: var(--font-hud);
+    font-size: 0.62rem;
+    font-style: italic;
+    color: rgba(0, 243, 255, 0.65);
+    margin-top: 2px;
+}
+
+.avatar-detail-list {
+    font-family: var(--font-hud);
+    font-size: 0.68rem;
+    color: var(--muted-text);
+    list-style: none;
+    line-height: 1.55;
+}
+
+.avatar-detail-list li::before {
+    content: "•";
+    color: var(--accent-cyan);
+    margin-right: 6px;
+}
+
+.avatar-archetype-section {
+    display: contents;
+}
+
+.avatar-astro-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px 6px;
+    margin-top: 4px;
+    width: 100%;
+}
+
+.avatar-astro-glyph {
+    background: rgba(0, 243, 255, 0.06);
+    border: 1px solid rgba(0, 243, 255, 0.25);
+    border-radius: 6px;
+    color: #ffffff;
+    font-family: var(--font-hud);
+    font-size: 0.8rem;
+    padding: 6px 0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.avatar-astro-glyph:hover,
+.avatar-astro-glyph.is-active {
+    border-color: var(--accent-cyan);
+    background: rgba(0, 243, 255, 0.25);
+    box-shadow: 0 0 10px var(--accent-cyan-glow);
+    color: var(--accent-cyan);
+}
+
+.avatar-astro-glyph--soon {
+    opacity: 0.45;
+    font-size: 0.6rem;
+}
+
+.avatar-archetypes-subgrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    background: rgba(0, 243, 255, 0.03);
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 243, 255, 0.18);
+    margin-top: 6px;
+}
+
+.avatar-arch-header {
+    font-family: var(--font-hud);
+    font-size: 0.58rem;
+    color: var(--accent-cyan);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+}
+
+.avatar-arch-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    margin-top: 2px;
+}
+
+.avatar-archetype-cta {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 16px;
+    background: rgba(0, 243, 255, 0.04);
+    border: 1px dashed rgba(0, 243, 255, 0.3);
+    border-radius: 10px;
+}
+
+.avatar-quiz-cta-btn {
+    background: transparent;
+    border: 1px solid var(--accent-cyan);
+    color: var(--accent-cyan);
+    padding: 10px 20px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.avatar-quiz-cta-btn:hover {
+    background: var(--accent-cyan);
+    color: var(--bg-base);
+    box-shadow: 0 0 20px var(--accent-cyan-glow);
+}
+
+/* Foreground mannequin canvas — sandwiched above the UI cards (z-index above
+   #app's own 2), below nothing else. Owns its own WebGLRenderer, driven by
+   sceneEngine.registerTick() rather than a private rAF (see AvatarView.js). */
+.avatar-fg-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 5;
+    pointer-events: none;
+}
