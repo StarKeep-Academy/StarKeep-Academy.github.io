@@ -7,9 +7,10 @@ Admin at /admin/.
 """
 
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.static import serve
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -26,3 +27,16 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+    # Dev convenience only: serve frontend-web/ from the same origin as the
+    # API, so `runserver` alone gives you the whole app at the URL it prints
+    # — no second static server and no cross-origin hop. frontend-web/ is
+    # still a standalone client that deploys as its own static site
+    # (DEC-005 amendment); this block is DEBUG-only and never runs in prod.
+    # Keep it last: the catch-all must not shadow admin/, accounts/, or
+    # api/v1/ above it.
+    FRONTEND_WEB_DIR = settings.BASE_DIR.parent / "frontend-web"
+    urlpatterns += [
+        path("", serve, {"document_root": FRONTEND_WEB_DIR, "path": "index.html"}),
+        re_path(r"^(?P<path>.*)$", serve, {"document_root": FRONTEND_WEB_DIR}),
+    ]

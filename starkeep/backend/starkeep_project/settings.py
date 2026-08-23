@@ -156,10 +156,16 @@ CACHES = {
 # ─── CORS ────────────────────────────────────────────────────────────────────
 # 8081/3000 = mobile app's Expo dev server (native + web preview). 5500 = the
 # frontend-web static dev server (VS Code Live Server default; adjust if you
-# serve it differently, e.g. `python -m http.server`). In production this env
-# var must be set to the real frontend domain(s) — localhost origins are dev-only.
+# serve it differently, e.g. `python -m http.server`). :8000 covers urls.py's
+# DEBUG-only block that serves frontend-web/ from runserver itself — the page
+# is same-origin then, but config.js pins the API at localhost:8000, so
+# loading the 127.0.0.1 spelling that runserver prints is still a cross-origin
+# request. In production this env var must be set to the real frontend
+# domain(s) — localhost origins are dev-only.
 CORS_ALLOWED_ORIGINS = os.environ.get(
-    "CORS_ALLOWED_ORIGINS", "http://localhost:8081,http://localhost:3000,http://localhost:5500"
+    "CORS_ALLOWED_ORIGINS",
+    "http://localhost:8081,http://localhost:3000,http://localhost:5500,"
+    "http://localhost:8000,http://127.0.0.1:8000",
 ).split(",")
 CORS_ALLOW_CREDENTIALS = True
 
