@@ -9,7 +9,9 @@ django-cors-headers==4.4.*
 python-dotenv==1.2.*    # loads backend/.env automatically — see settings.py
 
 # ─── Auth ────────────────────────────────────────────────────────────────────
-django-allauth==0.63.*
+# [socialaccount] extra is required — settings.py loads the google + apple
+# providers, which need requests / requests-oauthlib / pyjwt[crypto].
+django-allauth[socialaccount]==0.63.*
 
 # ─── Real-Time ───────────────────────────────────────────────────────────────
 channels==4.1.*
