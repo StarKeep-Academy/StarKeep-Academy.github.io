@@ -10,12 +10,19 @@ export class Router {
         window.addEventListener('popstate', () => this.handleRoute());
     }
 
-    navigate(path) {
+    /**
+     * @param {string} path
+     * @param {Object} [context] One-shot data handed to the incoming view's
+     *   mount() — e.g. { quizComplete: true } so AvatarView knows to refetch
+     *   after the archetype quiz returns. Not persisted: it applies to this
+     *   navigation only, so a later reload or Back doesn't replay it.
+     */
+    navigate(path, context = null) {
         window.history.pushState({}, '', path.startsWith('/') ? path : `/${path}`);
-        this.handleRoute();
+        return this.handleRoute(context);
     }
 
-    async handleRoute() {
+    async handleRoute(context = null) {
         let path = window.location.pathname.replace('/', '') || 'home';
 
         // DEC-011: no anonymous browsing. HomeView is the only route reachable
@@ -48,7 +55,8 @@ export class Router {
         if (typeof this.currentView.mount === 'function') {
             await this.currentView.mount({
                 scene: this.sceneEngine.scene,
-                camera: this.sceneEngine.camera
+                camera: this.sceneEngine.camera,
+                context
             });
         }
     }

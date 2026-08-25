@@ -91,10 +91,23 @@ class ArchetypeProfile(TimestampedModel):
         related_name="archetype",
     )
 
-    # Image 7 ASTRO column
-    sun_sign    = models.CharField(max_length=30, blank=True)
-    moon_sign   = models.CharField(max_length=30, blank=True)
-    rising_sign = models.CharField(max_length=30, blank=True)
+    # Image 7 ASTRO column. The quiz computes a full natal chart, so all ten
+    # bodies plus the two angles are stored — see metadata.CHART_PLACEMENTS for
+    # ordering and glyphs. The Imum Coeli and Descendant are deliberately NOT
+    # columns: each is always the exact opposite of the Midheaven / Ascendant,
+    # so they are derived on read and can never drift from what they mirror.
+    sun_sign       = models.CharField(max_length=30, blank=True)
+    moon_sign      = models.CharField(max_length=30, blank=True)
+    rising_sign    = models.CharField(max_length=30, blank=True)
+    mercury_sign   = models.CharField(max_length=30, blank=True)
+    venus_sign     = models.CharField(max_length=30, blank=True)
+    mars_sign      = models.CharField(max_length=30, blank=True)
+    jupiter_sign   = models.CharField(max_length=30, blank=True)
+    saturn_sign    = models.CharField(max_length=30, blank=True)
+    uranus_sign    = models.CharField(max_length=30, blank=True)
+    neptune_sign   = models.CharField(max_length=30, blank=True)
+    pluto_sign     = models.CharField(max_length=30, blank=True)
+    midheaven_sign = models.CharField(max_length=30, blank=True)
 
     # Image 7 JUNG column
     jung_archetype = models.CharField(max_length=50, blank=True)   # e.g. "magician"
@@ -102,19 +115,32 @@ class ArchetypeProfile(TimestampedModel):
     # Image 7 MBTI column
     mbti = models.CharField(max_length=10, blank=True)             # e.g. "INFP"
 
-    # Trait descriptions (Image 7 right panel body text)
+    # Legacy trait descriptions. As of quiz contract v1.1 these are no longer
+    # part of the documented payload: the quiz repo confirmed "Visionary" and
+    # "Divergent" were its old category names for the Heroic Path and Learning
+    # Path systems, so these duplicated recommended_heroic_path /
+    # recommended_learning_path rather than adding anything. The columns stay
+    # (still accepted if sent, no migration churn) but the Avatar page now
+    # renders the short line from archetypeCopy.js and the long form from
+    # `breakdowns` below.
     visionary_trait = models.TextField(blank=True)
     divergent_trait = models.TextField(blank=True)
 
     # Recommendations (pre-fill for path selection per DEC-012)
     recommended_heroic_path   = models.CharField(max_length=20, choices=HeroicPath.choices, blank=True)
     recommended_learning_path = models.CharField(max_length=20, choices=LearningPath.choices, blank=True)
-    purpose_seed              = models.CharField(max_length=200, blank=True)
+    purpose_seed              = models.CharField(max_length=500, blank=True)
 
     # Provenance
     quiz_run_id   = models.CharField(max_length=100, blank=True)
     quiz_version  = models.CharField(max_length=10, default="1.0")
     completed_at  = models.DateTimeField(null=True, blank=True)
+
+    # JSONB: interpretive copy from the quiz, keyed by results field —
+    # {"sun_sign": {"title": "Sun in Aries", "body": "..."}, ...}. Plain text,
+    # size-capped on ingest (see ArchetypeBreakdownsField). Display strings
+    # only, never query targets, so no indexing.
+    breakdowns = models.JSONField(default=dict, blank=True)
 
     # JSONB: full quiz output, verbatim. Schema may evolve in external repo.
     raw_quiz_output = models.JSONField(default=dict)

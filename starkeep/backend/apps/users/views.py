@@ -99,6 +99,8 @@ class MeView(APIView):
                 "data": {
                     "user_id": str(user.id),
                     "email":   user.email,
+                    # Additive only — DEC-006 forbids renaming, not adding.
+                    "date_joined": user.date_joined.isoformat(),
                     "avatar":  AvatarMiniSerializer(avatar).data if avatar else None,
                 },
                 "errors": None,

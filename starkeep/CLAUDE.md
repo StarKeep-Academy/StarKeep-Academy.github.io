@@ -28,8 +28,12 @@ Before writing any code, read in this order:
 6. Check docs/DECISIONS.md before any architectural choice
 
 ## Current Phase
-Phase 4 Complete — Star Map read + write (milestones/constellations from API; create, edit, submit, evidence upload, edge-graph + coordinate persistence)
-Next: Phase 5 — Avatar (full Image 7 profile)
+Phase 5 In Progress — Avatar (full Image 7 profile) + archetype-quiz SSO (DEC-014).
+Done: quiz identity handoff (`backend/apps/integrations/`, launch + exchange, local dev stub),
+archetype webhook hardening, editable avatar fields, DEC-012 path selection, real archetype copy,
+`/profile` account subpage.
+Outstanding: the quiz repo's half — see `docs/QUIZ_SSO_INTEGRATION.md` §9 for the open questions.
+Next: Phase 6 — LUX core (wallet, admin validation, LVM formula, WebSocket notify)
 
 ## Stack
 - Backend: Django 5, DRF, Django Channels, PostgreSQL, Redis

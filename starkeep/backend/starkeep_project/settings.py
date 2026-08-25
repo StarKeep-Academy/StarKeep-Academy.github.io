@@ -53,6 +53,7 @@ LOCAL_APPS = [
     "apps.starmap",
     "apps.missions",
     "apps.academy",
+    "apps.integrations",
     "apps.lux",
 ]
 
@@ -106,6 +107,10 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "apps.common.pagination.StandardPagination",
     "PAGE_SIZE": 20,
     "EXCEPTION_HANDLER": "apps.common.exceptions.starkeep_exception_handler",
+    # Scoped throttles only — applied per-view via throttle_scope, not globally.
+    "DEFAULT_THROTTLE_RATES": {
+        "quiz_launch": os.environ.get("THROTTLE_QUIZ_LAUNCH", "10/min"),
+    },
 }
 
 # ─── JWT ─────────────────────────────────────────────────────────────────────
@@ -169,6 +174,15 @@ CORS_ALLOWED_ORIGINS = os.environ.get(
 ).split(",")
 CORS_ALLOW_CREDENTIALS = True
 
+# Required whenever the backend is reached over a hostname that isn't localhost
+# — notably a Cloudflare tunnel during cross-site quiz testing, where Django
+# otherwise rejects every session-authenticated POST (admin, allauth) with a
+# CSRF origin mismatch. Scheme-qualified entries only, e.g.
+# "https://example.trycloudflare.com".
+CSRF_TRUSTED_ORIGINS = [
+    o.strip() for o in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()
+]
+
 # ─── AI Microservice ─────────────────────────────────────────────────────────
 AI_SERVICE_URL = os.environ.get("AI_SERVICE_URL", "http://localhost:8001")
 AI_SERVICE_TIMEOUT = int(os.environ.get("AI_SERVICE_TIMEOUT", "10"))
@@ -180,9 +194,30 @@ LUX_MILESTONE_CAP = 30      # Hard cap per milestone (manifesto §5.2)
 LUX_LEVEL_COST = 5          # LUX consumed per level-up (manifesto §5.3)
 
 # ─── External Integrations ───────────────────────────────────────────────────
+# DEC-007 (hosted quiz) + DEC-014 (SSO handoff). Both secrets are shared with
+# the quiz repo and must never reach a frontend bundle — they authenticate
+# server-to-server calls only. Both verifiers fail closed when unset, so an
+# unconfigured deployment rejects every quiz call rather than trusting it.
 QUIZ_REPO_WEBHOOK_SECRET = os.environ.get("QUIZ_REPO_WEBHOOK_SECRET", "")
 QUIZ_REPO_BASE_URL       = os.environ.get("QUIZ_REPO_BASE_URL", "")
 QUIZ_INTEGRATION_TOKEN   = os.environ.get("QUIZ_INTEGRATION_TOKEN", "")
+
+# The quiz's SSO entry route, appended to QUIZ_REPO_BASE_URL when building a
+# launch URL. Overridable because the quiz repo owns this path, not us — and
+# because the local dev stub mounts it somewhere else entirely.
+# Default is the quiz repo's confirmed route. Their SPA serves everything not
+# under /api/* as index.html, so the SSO endpoint is namespaced with the API.
+QUIZ_SSO_LAUNCH_PATH = os.environ.get("QUIZ_SSO_LAUNCH_PATH", "/api/sso/starkeep")
+
+# Short by design: a launch ticket only has to survive one redirect.
+QUIZ_LAUNCH_TICKET_TTL_SECONDS = int(os.environ.get("QUIZ_LAUNCH_TICKET_TTL_SECONDS", "120"))
+
+# Absolute, externally-reachable base for this backend. Used to build the
+# return_to URL the quiz redirects the browser back to, and the archetype POST
+# URL handed to the quiz on exchange. Must be the tunnel URL (not localhost)
+# whenever a remote quiz instance is in the loop — see docs/QUIZ_SSO_INTEGRATION.md.
+STARKEEP_PUBLIC_BASE_URL = os.environ.get("STARKEEP_PUBLIC_BASE_URL", "http://localhost:8000")
+
 SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY", "")
 
 # ─── Static / Media ──────────────────────────────────────────────────────────

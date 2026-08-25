@@ -140,6 +140,121 @@ Four rules from `STARMAP_SPEC.md` are replaced:
 
 ---
 
+## DEC-014 — Quiz Identity Handoff is a One-Time Ticket, Redeemed Server-to-Server
+**Date:** 2026-08-23  
+**Status:** LOCKED  
+**Extends:** DEC-007 (Archetype Quiz: Mode A)
+
+**Decision:** Starkeep acts as the identity provider for the archetype quiz. On launch, Starkeep
+mints a **single-use, 120-second, opaque ticket** and sends the browser to the quiz carrying it.
+The quiz's *backend* redeems that ticket over a back channel — authenticated with the shared
+integration token **and** an HMAC over the request body — and receives the user's identity
+(`starkeep_user_id`, `avatar_id`, `email`, `alias`, …). It then creates or finds its own local
+account, keyed on `starkeep_user_id`, and starts its own session.
+
+DEC-007 settled *where the quiz runs*; it never said how the quiz learns **who is taking it**.
+That gap is why the quiz link was a bare `window.open` to a hardcoded URL that carried no identity
+at all, leaving the already-built `POST /avatars/{id}/archetype` endpoint with no way to know which
+avatar to write to.
+
+**Why not put a Starkeep JWT in the URL or a postMessage.** Simpler, and rejected: it hands a live,
+full-scope account credential to another origin and writes it into browser history, `Referer`
+headers, and server logs. A ticket is worthless without the shared secret, is dead 120 seconds
+later, and is dead immediately after one use.
+
+**Why not full OAuth2 (django-oauth-toolkit).** Correct if Starkeep ever has several third-party
+consumers; heavy for exactly one. The flow above is the authorization-code shape with the
+generality removed, so it upgrades to real OAuth without changing the sequence.
+
+**Why the ticket lives in Postgres, not the Redis cache.** It survives a Redis-less local run, and
+the consumed/unconsumed trail is what you actually want when debugging an integration with a team
+whose code you cannot step through.
+
+**Accepted limitation:** one shared credential pair, no per-caller identity, rotation, or
+revocation — any holder of the token may post results for any `avatar_id`. Acceptable while the
+quiz is the sole consumer and the data is non-financial. Revisit when a second consumer appears.
+
+**Implementation:** `backend/apps/integrations/` — `QuizLaunchTicket`, `POST
+/api/v1/integrations/quiz/launch` (user JWT, throttled), `POST /api/v1/integrations/quiz/exchange`
+(integration token + HMAC). Shared credential checks live in
+`backend/apps/common/integration_security.py` — in `common` rather than `integrations` because
+`apps/avatar/views.py` also uses them and `avatar` sits *below* `integrations` in the DEC-009 layer
+order. `apps.integrations` joins the starmap tier in `.importlinter`.
+
+Client: `frontend-web/js/integrationsApi.js`; the launch button is `AvatarView.launchQuiz()`. The
+return is a full page load at `/avatar?quiz=complete`, so `main.js` reads that marker *before* its
+existing reset-URL-to-`/` step discards it, and hands it to the view through a new one-shot
+`Router.navigate(path, context)` argument.
+
+**Also fixed alongside, in `apps/avatar/views.py`:** the results payload is now schema-validated
+before write (`ArchetypePayloadSerializer`) — previously `recommended_heroic_path` was copied
+straight onto `avatar.heroic_path`, so a typo'd slug silently corrupted the profile despite
+`STARKEEP_CONTEXT.md §7` claiming validation existed. Also: constant-time bearer comparison,
+idempotent replay of a repeated `quiz_run_id`, `raw_quiz_output` now stores the quiz's own `raw`
+rather than our whole envelope, and `visionary_trait` / `divergent_trait` are finally accepted —
+the Avatar page renders both and nothing had ever been able to populate them.
+
+**Contract for the quiz repo:** `docs/QUIZ_SSO_INTEGRATION.md`.
+
+**Amendment 2026-08-24 — contract v1.1, after the quiz repo's response.** Four changes, all
+additive or subtractive at the edges; the handoff mechanism above is untouched.
+
+1. **The chart is twelve placements, not three.** The quiz computes a full natal chart (Swiss
+   Ephemeris), so `mercury_sign` through `pluto_sign` plus `midheaven_sign` are now stored
+   alongside the original sun/moon/rising. This cost one migration and turned the Avatar page's
+   twelve inert "coming soon" glyphs into real data. The grid is exactly these twelve
+   (`☉ ☽ ASC ☿ ♀ ♂ ♃ ♄ ♅ ♆ ♇ MC`), served as an ordered, glyph-annotated `chart` array so the
+   client never hardcodes placement order. The Imum Coeli and Descendant were briefly served as
+   derived fields (each being the exact opposite of the Midheaven / Ascendant) and then removed:
+   derivable is not the same as wanted, nothing renders them, and a derived API field no client
+   reads is only surface area. The North Node has no source in the quiz's output at all.
+
+2. **`breakdowns` — interpretive copy from the quiz.** A `{results_key: {title, body}}` JSONB
+   column holding the quiz's own per-field prose, so the Avatar page can show a real reading
+   rather than our generic per-sign line. **Plain text, not markdown**: `frontend-web` has no
+   bundler and no markdown library, and this is third-party content rendered on our page — plain
+   text goes through `textContent` and generates no HTML at all. Size-capped on ingest
+   (`ArchetypeBreakdownsField`) so a runaway payload cannot park megabytes in the column. Where a
+   breakdown exists it takes precedence over `archetypeCopy.js`, which only knows the sign in
+   general rather than this user's chart.
+
+3. **`visionary_trait` / `divergent_trait` retired.** The quiz repo pointed out that "Visionary"
+   and "Divergent" were its *old category names* for the Heroic Path and Learning Path systems —
+   these were never independent outputs, they duplicated `recommended_heroic_path` and
+   `recommended_learning_path`. Verified against the UI, which renders each one directly beneath
+   its corresponding path title. Removed from the documented contract; the columns stay and are
+   still accepted, so nothing breaks and no destructive migration was needed. The short trait line
+   now comes from `archetypeCopy.js` (our copy, our voice) and the long form from `breakdowns`.
+
+4. **`recommended_learning_path` is no longer expected from the quiz.** No chamber produces one,
+   and the two offered builds were a derived `MBTI × Jung` lookup or a new mini-assessment. Chose
+   neither: the six Learning Paths describe how a student *structures their education*, which MBTI
+   does not measure, so a derived value would be invented rather than evidenced — and DEC-012 has
+   the user explicitly confirm this choice, which reads badly if it was silently inferred. The
+   field stays in the schema and the DEC-012 pre-fill still works if it ever arrives; until then
+   the Avatar page prompts the user to choose. This also removed the integration's only genuine
+   build gap on the quiz side.
+
+**`hermit` is the canonical Jungian slug for this archetype, not `sage`.** The quiz repo asked for
+this on the grounds that `sage` is ambiguous with a heroic path name; that was initially judged
+wrong, since none of the six current paths is called Sage — but Truthseeker *was* called Sage
+earlier in the project, so the objection was correct. Storing a single name per archetype also
+keeps any *future* path rename from re-creating the collision, which is the real reason to hold the
+line here. `sage` → `hermit` and `outlaw` → `rebel` are accepted on the wire as deprecated aliases
+and folded to canonical by `metadata.canonical_jung()` before validation, so legacy callers keep
+working while the database only ever holds one name per concept.
+
+`QUIZ_SSO_LAUNCH_PATH` now defaults to `/api/sso/starkeep`, because the quiz's SPA serves every
+non-`/api/*` path as `index.html`.
+
+The chart grid is the twelve placements the quiz sends, and nothing else.
+
+**Bug found while implementing this:** `purpose_seed` validated at 500 characters but its column
+was `max_length=200`, so a value in between passed validation and then raised a `DataError` on
+save. The quiz repo's stated 500-char truncation would have hit it on the first real payload.
+
+---
+
 ## PENDING — Settings v1 Contents
 **Status:** OPEN — resolve before phase 6  
 **Default proposal:** Account info, sign-out, notifications toggle (in-app), theme (auto/light/dark).

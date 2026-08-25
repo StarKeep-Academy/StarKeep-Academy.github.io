@@ -12,7 +12,7 @@ name = Starkeep layer contract
 type = layers
 layers =
     apps.lux
-    apps.starmap | apps.academy | apps.missions
+    apps.starmap | apps.academy | apps.missions | apps.integrations
     apps.avatar
     apps.users
     apps.common

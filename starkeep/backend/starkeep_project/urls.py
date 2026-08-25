@@ -20,6 +20,7 @@ urlpatterns = [
     path("api/v1/", include("apps.users.urls")),
     path("api/v1/", include("apps.avatar.urls")),
     path("api/v1/", include("apps.starmap.urls")),
+    path("api/v1/", include("apps.integrations.urls")),
     # Future apps mount here as they ship:
     # Phase 5: path("api/v1/", include("apps.lux.urls")),
     # Phase 6: path("api/v1/", include("apps.academy.urls")),
@@ -27,6 +28,11 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+    # Local stand-in for the external quiz's backend, so the full DEC-014 round
+    # trip can be exercised without the remote app. Must be registered before
+    # the frontend-web catch-all below, or the catch-all swallows it.
+    urlpatterns += [path("dev/quiz-stub/", include("apps.integrations.dev_stub_urls"))]
 
     # Dev convenience only: serve frontend-web/ from the same origin as the
     # API, so `runserver` alone gives you the whole app at the URL it prints

@@ -58,6 +58,7 @@ Error shape (RFC 7807):
   "data": {
     "user_id": "uuid",
     "email": "user@example.com",
+    "date_joined": "2026-08-23T19:09:51.117Z",
     "avatar": {
       "id": "uuid",
       "alias": "DREAMWALKER",
@@ -79,10 +80,48 @@ Error shape (RFC 7807):
 |---|---|---|---|
 | GET | `/avatars/{id}` | Required | Full avatar profile (Image 7 data) |
 | PATCH | `/avatars/{id}` | Required (owner) | Update alias, display_name, purpose, north_star_goal, paths |
-| POST | `/avatars/{id}/archetype` | Integration token | Sync quiz results from external repo |
+| POST | `/avatars/{id}/archetype` | Integration token + HMAC | Sync quiz results from external repo (contract v1.1 — full natal chart + `breakdowns`; see `QUIZ_SSO_INTEGRATION.md`) |
 | GET | `/avatars/{id}/archetype` | Required | Get archetype profile |
 
+---
+
+## Integrations (DEC-014)
+
+Identity handoff to the external archetype quiz. Full contract for the quiz repo:
+`docs/QUIZ_SSO_INTEGRATION.md`.
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| POST | `/integrations/quiz/launch` | Required | Mint a single-use launch ticket; returns the URL to send the browser to |
+| POST | `/integrations/quiz/exchange` | Integration token + HMAC | Quiz backend redeems a ticket for the user's identity |
+
+### `POST /integrations/quiz/launch`
+Body `{ "return_to": "/avatar" }` — must be a **site-relative path**; absolute or
+protocol-relative values are rejected 400 (no open redirect). Throttled per user.
+
+```json
+{ "data": { "launch_url": "https://quiz.example.com/sso/starkeep?ticket=…&return_to=…",
+            "expires_at": "2026-08-23T19:16:02Z" }, "errors": null }
+```
+`503` when `QUIZ_REPO_BASE_URL` is unconfigured.
+
+### `POST /integrations/quiz/exchange`
+Body `{ "ticket": "…" }`. Consumes the ticket atomically — single-use, 120s TTL.
+
+```json
+{ "data": { "starkeep_user_id": "uuid", "avatar_id": "uuid", "email": "…",
+            "alias": "DREAMWALKER", "display_name": "…", "level": 7,
+            "has_archetype": false, "issued_at": "…",
+            "archetype_post_url": "https://…/api/v1/avatars/{id}/archetype",
+            "return_to": "https://…/avatar" }, "errors": null }
+```
+`401` bad token/signature · `404` unknown ticket · `410` already used or expired.
+
 ### `GET /avatars/{id}` Response (VR-ready — never rename these fields)
+
+> `chart` is computed, not stored: the ordered, glyph-annotated view of all 12 placements —
+> prefer it over reading the `*_sign` fields individually. `visionary_trait`/`divergent_trait` are retired (DEC-014 amendment) and will be
+> empty; `recommended_learning_path` is empty because the quiz does not produce one.
 ```json
 {
   "data": {
@@ -105,16 +144,24 @@ Error shape (RFC 7807):
     "purpose": "Self-Actualization Architect",
     "powers": [],
     "archetype": {
-      "sun_sign": "aries",
-      "moon_sign": "cancer",
-      "rising_sign": "capricorn",
+      "sun_sign": "aries", "moon_sign": "cancer", "rising_sign": "capricorn",
+      "mercury_sign": "gemini", "venus_sign": "taurus", "mars_sign": "leo",
+      "jupiter_sign": "sagittarius", "saturn_sign": "aquarius",
+      "uranus_sign": "scorpio", "neptune_sign": "sagittarius",
+      "pluto_sign": "libra", "midheaven_sign": "libra",
+      "chart": [
+        { "key": "sun", "field": "sun_sign", "glyph": "☉", "label": "SUN", "sign": "aries" }
+      ],
       "jung_archetype": "magician",
       "mbti": "INFP",
       "recommended_heroic_path": "dreamwalker",
-      "recommended_learning_path": "divergent",
+      "recommended_learning_path": "",
       "purpose_seed": "Self-Actualization Architect",
-      "visionary_trait": "You express Visionary energy through...",
-      "divergent_trait": "You bridge nature, technology..."
+      "breakdowns": {
+        "sun_sign": { "title": "Sun in Aries", "body": "...plain text..." }
+      },
+      "visionary_trait": "",
+      "divergent_trait": ""
     },
     "hours_of_impact": 7000,
     "impact_sources": [

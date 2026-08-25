@@ -146,13 +146,37 @@ Right panel (Attributes):
 
 ## 7. Archetype Quiz Integration (External Repo)
 
-**v1 Mode: Hosted iframe / WebView (Mode A)**
+**v1 Mode: Hosted quiz (Mode A, DEC-007) + SSO handoff (DEC-014)**
 
-The quiz already exists. Starkeep embeds it. On completion the quiz POSTs to Starkeep:
+The quiz already exists, on its own host with its own user accounts. Full contract for the quiz
+repo: **`docs/QUIZ_SSO_INTEGRATION.md`** — that file is the one to hand over; this section is the
+summary.
+
+### 7a. Identity handoff (DEC-014)
+
+The quiz cannot read our session, so Starkeep vouches for the user with a single-use ticket that
+the quiz's *backend* redeems over a back channel:
+
+```
+Browser  → Starkeep  POST /api/v1/integrations/quiz/launch     (user JWT) → { launch_url }
+Browser  → Quiz      GET  {quiz}/sso/starkeep?ticket=&return_to=
+Quiz srv → Starkeep  POST /api/v1/integrations/quiz/exchange   (token + HMAC)
+                     → { starkeep_user_id, avatar_id, email, alias, archetype_post_url, … }
+Quiz srv             upserts its own user keyed on starkeep_user_id, starts its own session
+Quiz     → Browser   302 to return_to + "?quiz=complete"
+```
+
+Tickets are opaque, single-use, and expire in 120 seconds. Never put a Starkeep JWT in the launch
+URL — see DEC-014 for why.
+
+### 7b. Results webhook
+
+On completion the quiz POSTs to Starkeep:
 
 ```
 POST /api/v1/avatars/{avatar_id}/archetype
 Authorization: Bearer <integration-token>
+X-Quiz-Signature: sha256=<hmac of the raw body>
 
 {
   "version": "1.0",
@@ -166,21 +190,51 @@ Authorization: Bearer <integration-token>
     "mbti": "INFP",
     "recommended_heroic_path": "dreamwalker",
     "recommended_learning_path": "divergent",
-    "purpose_seed": "Self-Actualization Architect"
+    "purpose_seed": "Self-Actualization Architect",
+    "visionary_trait": "…",
+    "divergent_trait": "…"
   },
   "raw": { }
 }
 ```
 
-Payload is HMAC-signed. Store raw in `archetypeprofile.raw_quiz_output` (JSONB).
-Validated with JSON schema before write. Emits `ArchetypeUpdated` signal.
+**Contract v1.1 (2026-08-24).** `results` carries the full natal chart — ten bodies plus the
+Midheaven (`sun_sign` `moon_sign` `rising_sign` `mercury_sign` `venus_sign` `mars_sign`
+`jupiter_sign` `saturn_sign` `uranus_sign` `neptune_sign` `pluto_sign` `midheaven_sign`).
+Those twelve are the whole chart — served also as an ordered, glyph-annotated `chart` array for the
+client to render directly. The Imum Coeli, Descendant and North Node are not part of the schema.
 
-**What quiz repo needs to provide (coordinate in phase 2):**
+A sibling `breakdowns` object carries the quiz's own interpretive prose per results field —
+`{key: {title, body}}`, **plain text**, size-capped on ingest, rendered via `textContent`.
 
-- Stable hosted URL
-- Versioned output schema
-- HMAC signing
-- Staging endpoint for dev testing
+`visionary_trait` and `divergent_trait` are **retired**: the quiz repo confirmed they were its old
+category names for the Heroic and Learning Path systems, so they only ever duplicated the two
+`recommended_*` fields. Still accepted, no longer expected.
+
+`recommended_learning_path` is **not sent by the quiz** — no chamber measures one. The user picks
+their Learning Path on the Avatar page (DEC-012); the DEC-012 pre-fill still applies if the field
+ever starts arriving.
+
+`jung_archetype` stores **`hermit`**, not the more usual Jungian `sage` — Truthseeker was once
+called Sage, so that word is a retired path name and reusing it for an archetype would blur the two
+taxonomies (and would again on a future path rename). `sage`→`hermit` and `outlaw`→`rebel` are
+accepted inbound and folded to canonical before storage, so only one name per archetype is ever
+written.
+
+The HMAC covers the **raw request body bytes exactly as sent** — signing a re-serialized copy is
+the classic way this integration fails.
+
+All `results` fields are optional and case-insensitive, but constrained to known value sets
+(`apps/avatar/metadata.py`: `ZODIAC_SIGNS`, `JUNG_ARCHETYPES`, `MBTI_TYPES`, plus the six
+`HeroicPath` / `LearningPath` slugs). Validated before write via `ArchetypePayloadSerializer` —
+this is enforced now; it was only ever documented before. `raw` is stored verbatim in
+`archetypeprofile.raw_quiz_output` (JSONB). Reposting the same `quiz_run_id` is idempotent.
+Emits the `archetype_updated` signal.
+
+**Status with the quiz repo (`QUIZ_SSO_INTEGRATION.md` §11-12):** all open questions answered
+and Starkeep's side is built and verified against v1.1. Their SSO route is `/api/sso/starkeep`.
+Remaining: a live Tier 2 tunnel test once their half is built. The North Node has no source and
+is not rendered.
 
 ---
 

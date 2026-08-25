@@ -872,6 +872,255 @@ button {
     overflow: hidden;
 }
 
+/* ── AvatarView edit modal (Phase 5) ─────────────────────────────────────────
+   Reuses .modal-overlay/.modal-content; these rules only style the form. */
+
+.avatar-header-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.avatar-edit-btn {
+    background: transparent;
+    border: 1px solid rgba(0, 243, 255, 0.4);
+    color: var(--accent-cyan);
+    padding: 7px 16px;
+    font-family: var(--font-display);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.avatar-edit-btn:hover {
+    background: var(--accent-cyan);
+    color: var(--bg-base);
+}
+
+.avatar-edit-modal {
+    width: 520px;
+    /* Six fields is taller than the viewport on a laptop — scroll inside the
+       card rather than letting the page scroll behind the scrim. */
+    max-height: 86vh;
+    overflow-y: auto;
+}
+
+.avatar-edit-title {
+    font-family: var(--font-display);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    color: var(--accent-cyan);
+    text-align: center;
+    margin-bottom: 22px;
+}
+
+.avatar-edit-field {
+    display: block;
+    margin-bottom: 16px;
+}
+
+.avatar-edit-field > span {
+    display: block;
+    font-family: var(--font-hud);
+    font-size: 0.62rem;
+    letter-spacing: 0.16em;
+    color: var(--muted-text);
+    margin-bottom: 6px;
+}
+
+.avatar-edit-field > span em {
+    font-style: normal;
+    text-transform: none;
+    letter-spacing: 0.04em;
+    opacity: 0.65;
+    margin-left: 8px;
+}
+
+.avatar-edit-field input,
+.avatar-edit-field select,
+.avatar-edit-field textarea {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    padding: 9px 12px;
+    color: #e2e8f0;
+    font-family: var(--font-hud);
+    font-size: 0.8rem;
+    resize: vertical;
+}
+
+.avatar-edit-field input:focus,
+.avatar-edit-field select:focus,
+.avatar-edit-field textarea:focus {
+    outline: none;
+    border-color: rgba(0, 243, 255, 0.6);
+}
+
+.avatar-edit-field option {
+    background: #060b18;
+}
+
+.avatar-edit-hint {
+    margin: 6px 0 0;
+    font-size: 0.68rem;
+    color: var(--muted-text);
+    opacity: 0.8;
+}
+
+.avatar-edit-error:empty {
+    display: none;
+}
+
+.avatar-edit-error {
+    margin: 4px 0 0;
+    font-size: 0.7rem;
+    color: #E25B5B;
+}
+
+.avatar-edit-actions {
+    margin-top: 22px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    font-family: var(--font-hud);
+    font-size: 0.72rem;
+}
+
+/* Short descriptive line under the Jung / MBTI titles. */
+.avatar-arch-blurb {
+    margin: 6px 0 0;
+    font-size: 0.7rem;
+    line-height: 1.45;
+    color: var(--muted-text);
+}
+
+/* ── ProfileView (Phase 5) — account & identity ──────────────────────────────
+   Reuses .header-bar / .back-btn-home / .page-title / .system-status above;
+   everything below is scoped to this view. Deliberately plain next to the
+   Avatar page: this is the account record, not the character sheet. */
+
+.profile-root {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow-y: auto;
+}
+
+.profile-root .header-bar,
+.profile-card,
+.profile-actions {
+    pointer-events: auto;
+}
+
+.profile-card {
+    position: relative;
+    margin: 120px auto 0;
+    width: min(90%, 640px);
+    background: rgba(10, 16, 30, 0.75);
+    border: 1px solid rgba(0, 243, 255, 0.22);
+    border-radius: 14px;
+    backdrop-filter: blur(10px);
+    padding: 28px 32px;
+}
+
+.profile-fields {
+    margin: 0;
+    display: grid;
+    gap: 18px;
+}
+
+.profile-field {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    align-items: baseline;
+    gap: 16px;
+}
+
+.profile-field dt {
+    font-family: var(--font-hud);
+    font-size: 0.66rem;
+    letter-spacing: 0.16em;
+    color: var(--muted-text);
+}
+
+.profile-field dd {
+    margin: 0;
+    font-size: 0.9rem;
+    /* Account IDs and long emails must not push the card wide. */
+    overflow-wrap: anywhere;
+}
+
+.profile-field code {
+    font-family: var(--font-hud);
+    font-size: 0.72rem;
+    color: var(--accent-cyan);
+}
+
+.profile-actions {
+    width: min(90%, 640px);
+    margin: 20px auto 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.profile-signout-btn {
+    background: transparent;
+    border: 1px solid rgba(226, 91, 91, 0.55);
+    color: #E25B5B;
+    padding: 10px 22px;
+    font-family: var(--font-display);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.profile-signout-btn:hover:not(:disabled) {
+    background: #E25B5B;
+    color: var(--bg-base);
+}
+
+.profile-signout-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.profile-note:empty {
+    display: none;
+}
+
+.profile-note {
+    margin: 0;
+    font-size: 0.68rem;
+    color: var(--muted-text);
+}
+
+/* Submenu entries that navigate somewhere of their own (e.g. AVATAR ▸ PROFILE)
+   read as clickable; the rest stay inert labels. */
+.submenu-item--linked {
+    cursor: pointer;
+}
+
+.submenu-item--linked:hover {
+    color: var(--accent-cyan);
+}
+
+@media (max-width: 600px) {
+    .profile-field {
+        grid-template-columns: 1fr;
+        gap: 4px;
+    }
+}
+
 /* Unlike .header-bar's other consumers, this view's header spans the full
    viewport width edge-to-edge (matching the reference layout) rather than
    being capped/centered at 1300px — scoped here so other views keep the
@@ -1215,9 +1464,25 @@ button {
     color: var(--accent-cyan);
 }
 
-.avatar-astro-glyph--soon {
-    opacity: 0.45;
-    font-size: 0.6rem;
+/* A placement the quiz did not send. Dimmed rather than hidden so the chart
+   keeps its shape whatever subset of the fourteen arrives. Replaced
+   .avatar-astro-glyph--soon, which marked twelve permanently-empty glyphs. */
+.avatar-astro-glyph--empty {
+    opacity: 0.4;
+}
+
+/* Multi-character placements (ASC, MC, IC, DSC) need to fit the same cell as
+   a single glyph character. */
+.avatar-astro-glyph {
+    font-size: 0.78rem;
+}
+
+/* Invites an action instead of stating a fact — used where the Learning Path
+   is unset, since the quiz never recommends one (DEC-012). */
+.avatar-detail-text--prompt {
+    color: var(--accent-cyan);
+    opacity: 0.85;
+    font-style: italic;
 }
 
 .avatar-archetypes-subgrid {
@@ -1271,10 +1536,28 @@ button {
     transition: all 0.25s ease;
 }
 
-.avatar-quiz-cta-btn:hover {
+.avatar-quiz-cta-btn:hover:not(:disabled) {
     background: var(--accent-cyan);
     color: var(--bg-base);
     box-shadow: 0 0 20px var(--accent-cyan-glow);
+}
+
+.avatar-quiz-cta-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+/* Failure/notice line under the quiz button — empty until something needs
+   saying, so it takes no vertical space in the normal case. */
+.avatar-quiz-cta-note:empty {
+    display: none;
+}
+
+.avatar-quiz-cta-note {
+    margin: 0;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    color: var(--semantic-danger, #E25B5B);
 }
 
 /* Foreground mannequin canvas — sandwiched above the UI cards (z-index above

@@ -42,7 +42,16 @@ export class HomeView {
             {
                 id: "avatar",
                 title: "AVATAR",
-                subitems: ["PROFILE", "ARCHETYPES", "HEROIC PATH", "LEARNING PATH"],
+                // A subitem may be a bare label (clicking it just opens the
+                // node's own route) or {label, route} to go somewhere of its
+                // own — account/identity lives on its own page, apart from the
+                // Avatar view's paths-and-archetype content.
+                subitems: [
+                    { label: "PROFILE", route: "profile" },
+                    "ARCHETYPES",
+                    "HEROIC PATH",
+                    "LEARNING PATH"
+                ],
                 route: "avatar",
                 screenAngle: 140 * (Math.PI / 180)
             },
@@ -799,10 +808,15 @@ export class HomeView {
             const submenuEl = document.getElementById(`submenu-${item.id}`);
             if (submenuEl) {
                 submenuEl.innerHTML = "";
-                item.subitems.forEach(subText => {
+                item.subitems.forEach(sub => {
+                    const { label, route } = typeof sub === "string" ? { label: sub } : sub;
                     const div = document.createElement("div");
                     div.className = "submenu-item";
-                    div.innerText = subText;
+                    div.innerText = label;
+                    if (route) {
+                        div.dataset.route = route;
+                        div.classList.add("submenu-item--linked");
+                    }
                     submenuEl.appendChild(div);
                 });
             }
@@ -822,9 +836,13 @@ export class HomeView {
             });
 
             node.addEventListener("click", (e) => {
-                if (!e.target.classList.contains('submenu-item')) {
-                    this.triggerTransition(itemData.route);
+                if (e.target.classList.contains('submenu-item')) {
+                    // Subitems without a route of their own stay inert, as before.
+                    const subRoute = e.target.dataset.route;
+                    if (subRoute) this.triggerTransition(subRoute);
+                    return;
                 }
+                this.triggerTransition(itemData.route);
             });
         });
 

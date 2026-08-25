@@ -1,6 +1,16 @@
 import * as THREE from 'three';
 import { store } from '../store.js';
 import { avatarApi } from '../avatarApi.js';
+import { integrationsApi } from '../integrationsApi.js';
+import {
+    HEROIC_PATHS,
+    LEARNING_PATHS,
+    heroicPathCopy,
+    jungCopy,
+    learningPathCopy,
+    mbtiCopy,
+    placementCopy
+} from '../archetypeCopy.js';
 import { API_BASE } from '../config.js';
 import { EARTH_RADIUS } from '../scene.js';
 
@@ -49,8 +59,6 @@ const MANNEQUIN_FEET_LOCAL_Y = -1.04;
 // off-screen" look instead of a huge dark disc.
 const EARTH_RIM_GAP = 0.6;
 
-const ARCHETYPE_QUIZ_URL = 'https://starkeepacademy-production.up.railway.app/';
-
 // Generic placeholder shown wherever a data-driven glyph (heroic/learning
 // path SVG from the backend) is missing or fails to load, and for the
 // always-static Alias/Purpose icons — same diamond-sigil motif throughout.
@@ -91,25 +99,15 @@ const COAT_OF_ARMS_SVG = `
     </svg>
 `;
 
-const PLACEMENTS = [
-    { key: 'sun', symbol: '☉', label: 'SUN', field: 'sun_sign' },
-    { key: 'moon', symbol: '☽', label: 'MOON', field: 'moon_sign' },
-    { key: 'rising', symbol: 'ASC', label: 'RISING', field: 'rising_sign' }
-];
+// The chart grid is built from the API's `archetype.chart` array (backend
+// metadata.CHART_PLACEMENTS), which carries order, glyph, label and sign for
+// all twelve placements. It replaced a hardcoded three-placement list plus
+// twelve DECORATIVE_GLYPHS that rendered a "coming soon" state — the quiz
+// computes a full natal chart, so every glyph in the grid now holds real data.
 
-// Decorative-only birth-chart symbols — no backend fields exist for these
-// yet (ArchetypeProfile only stores sun/moon/rising), so clicking one shows
-// a "coming soon" state rather than fabricated astrology content.
-const DECORATIVE_GLYPHS = ['☿', '♀', '♂', '♃', '♄', '♅', '♆', '♇', 'MC', 'IC', 'DSC', '☊'];
-
-// Deliberately generic, not sign-specific — these are placeholders until
-// real AI-personalized copy exists (per product decision), so they must not
-// read as if they were already real astrology content.
-const PLACEHOLDER_COPY = {
-    sun: 'Your Sun sign colors your core identity and how you shine. A personalized reading from your quiz and AI data is coming soon.',
-    moon: 'Your Moon sign shapes your emotional inner world. A personalized reading from your quiz and AI data is coming soon.',
-    rising: 'Your Rising sign is the mask you show the world first. A personalized reading from your quiz and AI data is coming soon.'
-};
+// Real per-sign / per-archetype copy now lives in ../archetypeCopy.js. It
+// replaced a PLACEHOLDER_COPY block that printed the same generic "coming
+// soon" sentence for every sign.
 
 export class AvatarView {
     constructor(router) {
@@ -141,7 +139,10 @@ export class AvatarView {
                 <header class="header-bar">
                     <button class="back-btn-home" id="avatar-back-btn">&larr; MENU</button>
                     <div class="page-title">AVATAR</div>
-                    <div class="system-status" id="avatar-status">SYNCING PROFILE...</div>
+                    <div class="avatar-header-right">
+                        <button class="avatar-edit-btn" id="avatar-edit-btn">EDIT</button>
+                        <div class="system-status" id="avatar-status">SYNCING PROFILE...</div>
+                    </div>
                 </header>
 
                 <div class="avatar-grid">
@@ -218,19 +219,76 @@ export class AvatarView {
                 </div>
 
                 <canvas id="avatar-fg-canvas" class="avatar-fg-canvas"></canvas>
+
+                <div id="avatar-edit-modal" class="modal-overlay hidden">
+                    <div class="modal-content rounded-2xl avatar-edit-modal">
+                        <div class="avatar-edit-title">EDIT AVATAR</div>
+
+                        <label class="avatar-edit-field">
+                            <span>ALIAS</span>
+                            <input type="text" id="edit-alias" maxlength="50" placeholder="DREAMWALKER">
+                        </label>
+
+                        <label class="avatar-edit-field">
+                            <span>NAME</span>
+                            <input type="text" id="edit-display-name" maxlength="100" placeholder="Your real name">
+                        </label>
+
+                        <label class="avatar-edit-field">
+                            <span>HEROIC PATH <em>How you create impact</em></span>
+                            <select id="edit-heroic-path"></select>
+                            <p class="avatar-edit-hint" id="edit-heroic-hint"></p>
+                        </label>
+
+                        <label class="avatar-edit-field">
+                            <span>LEARNING PATH <em>How you learn &amp; grow</em></span>
+                            <select id="edit-learning-path"></select>
+                            <p class="avatar-edit-hint" id="edit-learning-hint"></p>
+                        </label>
+
+                        <label class="avatar-edit-field">
+                            <span>PURPOSE <em>Your calling, your quest, your destiny</em></span>
+                            <textarea id="edit-purpose" rows="2" maxlength="500"></textarea>
+                        </label>
+
+                        <label class="avatar-edit-field">
+                            <span>NORTH STAR GOAL</span>
+                            <textarea id="edit-north-star" rows="2" maxlength="500"></textarea>
+                        </label>
+
+                        <p class="avatar-edit-error" id="avatar-edit-error"></p>
+
+                        <div class="avatar-edit-actions">
+                            <button class="btn-nebula py-2 px-4 rounded-lg" id="avatar-edit-cancel">CANCEL</button>
+                            <button class="btn-nebula py-2 px-4 rounded-lg text-cyan-300" id="avatar-edit-save">SAVE</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         `;
     }
 
-    async mount({ scene, camera }) {
+    async mount({ scene, camera, context }) {
         this.sceneEngine = this.router.sceneEngine;
         this.scene = scene;
         this.camera = camera;
+        this.returningFromQuiz = context?.quizComplete === true;
 
         this.sceneEngine.cameraTo(CAMERA_FRAME_POS, CAMERA_FRAME_LOOKAT, 900);
 
         document.getElementById('avatar-back-btn')?.addEventListener('click', () => {
             this.router.navigate('home');
+        });
+
+        document.getElementById('avatar-edit-btn')
+            ?.addEventListener('click', () => this.openEditModal());
+        document.getElementById('avatar-edit-cancel')
+            ?.addEventListener('click', () => this.closeEditModal());
+        document.getElementById('avatar-edit-save')
+            ?.addEventListener('click', () => this.saveEdits());
+        // Click the scrim to dismiss, matching the goal/confirm modals.
+        document.getElementById('avatar-edit-modal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'avatar-edit-modal') this.closeEditModal();
         });
 
         this.initForeground();
@@ -239,6 +297,10 @@ export class AvatarView {
 
         await this.loadAvatarData();
         this.renderAvatarData();
+
+        if (this.returningFromQuiz) {
+            this.confirmQuizResults();
+        }
 
         this.resizeHandler = this.onResize.bind(this);
         window.addEventListener('resize', this.resizeHandler);
@@ -256,6 +318,206 @@ export class AvatarView {
      * Dev-bypass sessions (store.devSeed()) have no real Avatar row to fetch
      * — same reasoning StarMapView's resetState() uses for the same check.
      */
+    /**
+     * The quiz does not recommend a Learning Path — it has no chamber that
+     * measures one — so unlike the Heroic Path this is always the user's own
+     * choice (DEC-012). When it is unset, say so and point at the editor
+     * rather than leaving the panel silently blank.
+     */
+    renderLearningPathLine(avatar) {
+        const el = document.getElementById('avatar-divergent-trait');
+        if (!el) return;
+
+        if (avatar.learning_path?.slug) {
+            el.textContent =
+                avatar.archetype?.breakdowns?.recommended_learning_path?.body
+                || learningPathCopy(avatar.learning_path.slug);
+            el.classList.remove('avatar-detail-text--prompt');
+            return;
+        }
+
+        el.textContent = 'Not set yet — choose how you learn and grow in EDIT.';
+        el.classList.add('avatar-detail-text--prompt');
+    }
+
+    // ─── Editing ────────────────────────────────────────────────────────────
+
+    /**
+     * Open the edit modal, populated from current data.
+     *
+     * Covers exactly the six fields AvatarUpdateSerializer accepts, so this is
+     * one PATCH rather than a field-by-field save. The two path selects are the
+     * DEC-012 surface: the quiz recommends, the user confirms or overrides —
+     * the backend only ever pre-fills a path that is still unset, so choosing
+     * here is what makes the choice actually the user's.
+     */
+    openEditModal() {
+        const avatar = this.avatarData || {};
+        const recommended = avatar.archetype || {};
+
+        const fill = (selectId, options, current, recommendedSlug, hintId) => {
+            const select = document.getElementById(selectId);
+            if (!select) return;
+            select.innerHTML = '<option value="">— Not chosen —</option>';
+            Object.entries(options).forEach(([slug, description]) => {
+                const opt = document.createElement('option');
+                opt.value = slug;
+                opt.textContent =
+                    slug.charAt(0).toUpperCase() + slug.slice(1) +
+                    (slug === recommendedSlug ? '  ★ recommended by your quiz' : '');
+                opt.dataset.description = description;
+                select.appendChild(opt);
+            });
+            select.value = current || '';
+
+            const hint = document.getElementById(hintId);
+            const showHint = () => {
+                if (hint) hint.textContent = options[select.value] || '';
+            };
+            showHint();
+            select.onchange = showHint;
+        };
+
+        document.getElementById('edit-alias').value = avatar.alias || '';
+        document.getElementById('edit-display-name').value = avatar.display_name || '';
+        document.getElementById('edit-purpose').value = avatar.purpose || '';
+        document.getElementById('edit-north-star').value = avatar.north_star_goal || '';
+
+        fill('edit-heroic-path', HEROIC_PATHS, avatar.heroic_path?.slug,
+             recommended.recommended_heroic_path, 'edit-heroic-hint');
+        fill('edit-learning-path', LEARNING_PATHS, avatar.learning_path?.slug,
+             recommended.recommended_learning_path, 'edit-learning-hint');
+
+        this.setText('avatar-edit-error', '');
+        document.getElementById('avatar-edit-modal')?.classList.remove('hidden');
+    }
+
+    closeEditModal() {
+        document.getElementById('avatar-edit-modal')?.classList.add('hidden');
+    }
+
+    async saveEdits() {
+        const saveBtn = document.getElementById('avatar-edit-save');
+        const body = {
+            alias: document.getElementById('edit-alias').value.trim(),
+            display_name: document.getElementById('edit-display-name').value.trim(),
+            heroic_path: document.getElementById('edit-heroic-path').value,
+            learning_path: document.getElementById('edit-learning-path').value,
+            purpose: document.getElementById('edit-purpose').value.trim(),
+            north_star_goal: document.getElementById('edit-north-star').value.trim()
+        };
+
+        if (localStorage.getItem('starkeep_web_dev_bypass') === '1') {
+            this.setText('avatar-edit-error', 'Dev session — sign in with a real account to save.');
+            return;
+        }
+
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'SAVING…';
+        }
+        this.setText('avatar-edit-error', '');
+
+        try {
+            // PATCH returns the full updated avatar, so there's no need to
+            // refetch — take the server's version as truth.
+            this.avatarData = await avatarApi.updateAvatar(this.avatarData.id, body);
+            this.renderAvatarData();
+            this.setText('avatar-status', 'PROFILE SAVED');
+            this.closeEditModal();
+        } catch (err) {
+            console.error('[AvatarView] Save failed:', err);
+            // invalid_params names the offending field — much more useful than
+            // a generic failure message when a choice field rejects a value.
+            const detail = err?.invalidParams?.length
+                ? err.invalidParams.map((p) => `${p.field}: ${p.message}`).join('; ')
+                : (err?.message || 'Could not save. Please try again.');
+            this.setText('avatar-edit-error', detail);
+        } finally {
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'SAVE';
+            }
+        }
+    }
+
+    /**
+     * Called when the quiz has redirected us back (main.js reads the marker off
+     * the return URL before it's cleared).
+     *
+     * The results normally landed before the redirect did, so the fetch that
+     * already ran on mount has them. The retry covers the narrow case where the
+     * browser hop beats the quiz's server-to-server POST — better one quiet
+     * second attempt than the user reloading and wondering if it failed.
+     */
+    async confirmQuizResults() {
+        const setStatus = (text) => {
+            const el = document.getElementById('avatar-status');
+            if (el) el.textContent = text;
+        };
+
+        if (this.avatarData?.archetype) {
+            setStatus('ARCHETYPE SYNCED');
+            return;
+        }
+
+        setStatus('SYNCING ARCHETYPE...');
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        if (this.destroyed) return;  // navigated away mid-wait
+
+        await this.loadAvatarData();
+        if (this.destroyed) return;
+        this.renderAvatarData();
+
+        setStatus(
+            this.avatarData?.archetype
+                ? 'ARCHETYPE SYNCED'
+                : 'QUIZ RESULTS NOT RECEIVED YET — REFRESH IN A MOMENT'
+        );
+    }
+
+    /**
+     * Hand off to the archetype quiz (DEC-014).
+     *
+     * The backend mints a single-use ticket and returns the URL to send the
+     * browser to — we never construct it here, because the quiz lives on
+     * another host with its own accounts and only a server-signed handoff can
+     * tell it who this is. Same tab: the quiz redirects back to
+     * /avatar?quiz=complete when it's done, which main.js picks up.
+     */
+    async launchQuiz() {
+        const button = document.getElementById('avatar-quiz-cta-btn');
+        const note = document.getElementById('avatar-quiz-cta-note');
+
+        if (localStorage.getItem('starkeep_web_dev_bypass') === '1') {
+            if (note) note.textContent = 'Sign in with a real account to take the quiz.';
+            return;
+        }
+
+        if (button) {
+            button.disabled = true;
+            button.textContent = 'OPENING QUIZ…';
+        }
+        if (note) note.textContent = '';
+
+        try {
+            const { launch_url } = await integrationsApi.launchQuiz('/avatar');
+            // assign(), not replace() — Back should return here, not to the quiz.
+            window.location.assign(launch_url);
+        } catch (err) {
+            console.error('[AvatarView] Could not start the archetype quiz:', err);
+            if (button) {
+                button.disabled = false;
+                button.textContent = 'TAKE THE ARCHETYPE QUIZ';
+            }
+            if (note) {
+                note.textContent = err?.status === 503
+                    ? 'The quiz is not configured on this server yet.'
+                    : 'Could not reach the quiz just now. Please try again.';
+            }
+        }
+    }
+
     async loadAvatarData() {
         const usingDevBypass = !store.getState().isAuthenticated
             || localStorage.getItem('starkeep_web_dev_bypass') === '1';
@@ -288,7 +550,9 @@ export class AvatarView {
             powers: [],
             archetype: stateAvatar?.has_archetype ? {
                 sun_sign: '', moon_sign: '', rising_sign: '',
-                jung_archetype: '', mbti: '', visionary_trait: '', divergent_trait: '', purpose_seed: ''
+                jung_archetype: '', mbti: '', purpose_seed: '',
+                breakdowns: {},
+                chart: []
             } : null,
             hours_of_impact: 0,
             impact_sources: []
@@ -310,9 +574,17 @@ export class AvatarView {
         this.renderGlyph('avatar-learning-path-glyph', avatar.learning_path?.glyph_url);
 
         this.setText('avatar-heroic-path-title', (avatar.heroic_path?.display_name || 'Not yet chosen').toUpperCase());
-        this.setText('avatar-visionary-trait', avatar.archetype?.visionary_trait || '');
+        // Contract v1.1 retired visionary_trait/divergent_trait — the quiz
+        // confirmed they were its old category names for these two paths, so
+        // they only ever duplicated them. The rich text now comes from the
+        // quiz's own path breakdown, the short line from archetypeCopy.js.
+        this.setText(
+            'avatar-visionary-trait',
+            avatar.archetype?.breakdowns?.recommended_heroic_path?.body
+                || heroicPathCopy(avatar.heroic_path?.slug)
+        );
         this.setText('avatar-learning-path-title', (avatar.learning_path?.display_name || 'Not yet chosen').toUpperCase());
-        this.setText('avatar-divergent-trait', avatar.archetype?.divergent_trait || '');
+        this.renderLearningPathLine(avatar);
 
         this.renderPowers(avatar.powers);
         this.renderHoursOfImpact(avatar.hours_of_impact, avatar.impact_sources);
@@ -386,11 +658,11 @@ export class AvatarView {
                     <h3 class="avatar-detail-title">DISCOVER YOUR ARCHETYPE</h3>
                     <p class="avatar-detail-text">Complete the archetype quiz to unlock your birth chart, Jungian archetype, MBTI type, and purpose statement.</p>
                     <button class="avatar-quiz-cta-btn" id="avatar-quiz-cta-btn">TAKE THE ARCHETYPE QUIZ</button>
+                    <p class="avatar-quiz-cta-note" id="avatar-quiz-cta-note"></p>
                 </div>
             `;
-            document.getElementById('avatar-quiz-cta-btn')?.addEventListener('click', () => {
-                window.open(ARCHETYPE_QUIZ_URL, '_blank', 'noopener,noreferrer');
-            });
+            document.getElementById('avatar-quiz-cta-btn')
+                ?.addEventListener('click', () => this.launchQuiz());
             return;
         }
 
@@ -409,10 +681,12 @@ export class AvatarView {
                     <div class="avatar-arch-col">
                         <div class="avatar-arch-header">. JUNG .</div>
                         <h4 class="avatar-arch-title">${archetype.jung_archetype ? archetype.jung_archetype.toUpperCase() : '—'}</h4>
+                        <p class="avatar-arch-blurb" id="avatar-jung-blurb"></p>
                     </div>
                     <div class="avatar-arch-col">
                         <div class="avatar-arch-header">. MBTI .</div>
                         <h4 class="avatar-arch-title">${archetype.mbti || '—'}</h4>
+                        <p class="avatar-arch-blurb" id="avatar-mbti-blurb"></p>
                     </div>
                 </div>
             </div>
@@ -431,20 +705,17 @@ export class AvatarView {
         `;
 
         const gridEl = document.getElementById('avatar-astro-grid');
-        PLACEMENTS.forEach((p) => {
+        this.chart = Array.isArray(archetype.chart) ? archetype.chart : [];
+        this.chart.forEach((placement) => {
             const btn = document.createElement('button');
-            btn.className = 'avatar-astro-glyph';
-            btn.dataset.placement = p.key;
-            btn.textContent = p.symbol;
-            btn.title = p.label;
-            gridEl.appendChild(btn);
-        });
-        DECORATIVE_GLYPHS.forEach((symbol) => {
-            const btn = document.createElement('button');
-            btn.className = 'avatar-astro-glyph avatar-astro-glyph--soon';
-            btn.dataset.placement = 'soon';
-            btn.textContent = symbol;
-            btn.title = 'Coming soon';
+            // A placement the quiz didn't send stays dimmed rather than being
+            // hidden, so the chart keeps its shape whatever arrives.
+            btn.className = 'avatar-astro-glyph' + (placement.sign ? '' : ' avatar-astro-glyph--empty');
+            btn.dataset.placement = placement.key;
+            btn.textContent = placement.glyph;
+            btn.title = placement.sign
+                ? `${placement.label} in ${placement.sign}`
+                : `${placement.label} — not recorded`;
             gridEl.appendChild(btn);
         });
         gridEl.addEventListener('click', (e) => {
@@ -452,6 +723,9 @@ export class AvatarView {
             if (btn) this.selectPlacement(btn.dataset.placement);
         });
 
+        const bd = archetype.breakdowns || {};
+        this.setText('avatar-jung-blurb', bd.jung_archetype?.body || jungCopy(archetype.jung_archetype));
+        this.setText('avatar-mbti-blurb', bd.mbti?.body || mbtiCopy(archetype.mbti));
         this.setText('avatar-purpose-title', this.avatarData?.purpose || archetype.purpose_seed || 'Not yet defined');
 
         this.selectPlacement('sun');
@@ -467,26 +741,18 @@ export class AvatarView {
         const noteEl = document.getElementById('avatar-astro-note');
         if (!titleEl || !descEl || !noteEl) return;
 
-        if (key === 'soon') {
-            titleEl.textContent = 'COMING SOON';
-            descEl.textContent = 'Full birth chart placements (Mercury, Venus, Mars, and more) will unlock in a future update.';
-            noteEl.textContent = '';
-            return;
-        }
+        const placement = (this.chart || []).find((p) => p.key === key);
+        if (!placement) return;
 
-        const placement = PLACEMENTS.find((p) => p.key === key);
-        const sign = this.avatarData?.archetype?.[placement.field];
+        const copy = placementCopy(key, placement.sign);
+        // The quiz's own interpretation wins when it sent one for this
+        // placement — it is written about this user's actual chart, where
+        // archetypeCopy.js only knows the sign in general.
+        const breakdown = this.avatarData?.archetype?.breakdowns?.[placement.field];
 
-        if (!sign) {
-            titleEl.textContent = `${placement.label} — UNKNOWN`;
-            descEl.textContent = 'This placement hasn\'t been recorded yet.';
-            noteEl.textContent = '';
-            return;
-        }
-
-        titleEl.textContent = `${placement.label} IN ${sign.toUpperCase()}`;
-        descEl.textContent = PLACEHOLDER_COPY[key];
-        noteEl.textContent = 'AI-personalized description coming soon.';
+        titleEl.textContent = breakdown?.title || copy.title;
+        descEl.textContent = breakdown?.body || copy.body;
+        noteEl.textContent = copy.note;
     }
 
     // ─── Persistent Earth lock ──────────────────────────────────────────────
@@ -672,6 +938,10 @@ export class AvatarView {
     // ─── Lifecycle ──────────────────────────────────────────────────────────
 
     destroy() {
+        // confirmQuizResults() may still be mid-await; this tells it to stop
+        // touching DOM that no longer belongs to this view.
+        this.destroyed = true;
+
         if (this.foregroundTickFn) this.sceneEngine?.unregisterTick(this.foregroundTickFn);
         if (this.earthLockTickFn) this.sceneEngine?.unregisterTick(this.earthLockTickFn);
         if (this.resizeHandler) window.removeEventListener('resize', this.resizeHandler);

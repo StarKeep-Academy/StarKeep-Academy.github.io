@@ -22,10 +22,12 @@ frontend-web/
 │   ├── router.js          # SPA router (History API pushState/popstate)
 │   ├── store.js          # Global state manager (user session, socket state)
 │   ├── constants.js       # Shared static data/config (star + constellation seed data)
-│   ├── config.js          # API_BASE resolution (hostname-based dev/prod default, window.STARKEEP_API_BASE override)
+│   ├── config.js          # API_BASE resolution (same-origin by default; :5500/:3000/:8081 fall back to :8000; window.STARKEEP_API_BASE overrides)
 │   ├── api.js             # Base HTTP client, auth token storage, ApiError — everything else wraps this
 │   ├── starmapApi.js      # Star Map API client (GET/POST star maps, constellations, milestones/evidence)
 │   ├── avatarApi.js       # Avatar API client (North Star goal persistence, avatar profile)
+│   ├── integrationsApi.js # Archetype-quiz SSO launch (DEC-014) — the quiz URL lives on the server, never here
+│   ├── archetypeCopy.js   # Display copy for zodiac / Jung / MBTI / path vocabulary (presentation only)
 │   ├── starGraph.js       # Pure, THREE-free constellation edge-graph + force-directed layout (DEC-013; unit-tested, see below)
 │   ├── starGraph.test.mjs # Node-runnable test suite for starGraph.js (103 assertions)
 │   ├── materials/
@@ -34,14 +36,25 @@ frontend-web/
 │   └── views/
 │       ├── HomeView.js         # Radial-nav hub (Phase 2 shell) & 3D nav-node overlay
 │       ├── StarMapView.js      # Star Maps UI & constellation 3D overlays — real backend read+write via starmapApi.js/avatarApi.js
-│       ├── AvatarView.js       # NOT YET BUILT — Avatar Customizer UI & mesh loader
+│       ├── AvatarView.js       # Image 7 profile — paths, archetype, editing, quiz launch (Phase 5)
+│       ├── ProfileView.js      # Account & identity subpage (email, member-since, sign-out) — Phase 5
 │       └── AcademyChatView.js  # NOT YET BUILT — Chat/Discord UI overlay
 ```
 
-`HomeView.js` is the radial-nav hub (Phase 2 shell) — it links to five nodes: `starmap`
-(built), `avatar`, `academy`, `missions`, `lux` (all four still stubs). `router.js` falls
+`HomeView.js` is the radial-nav hub (Phase 2 shell) — it links to five nodes: `starmap` and
+`avatar` (both built), plus `academy`, `missions`, `lux` (still stubs). `router.js` falls
 back to `home` for any route with no registered module, so clicking an unbuilt nav node
 currently just re-mounts the hub rather than erroring.
+
+A nav node's submenu entry may carry its own `route` (`{label, route}` instead of a bare
+string) — that is how **AVATAR ▸ PROFILE** reaches `/profile`. Entries without a route stay
+inert labels, as they were.
+
+`Router.navigate(path, context)` takes an optional one-shot `context` object, passed through to
+the incoming view's `mount()`. It exists for the archetype-quiz return (DEC-014): that redirect
+is a full page load at `/avatar?quiz=complete`, and `main.js` reads the marker *before* its
+reset-URL-to-`/` step discards it, then hands it to `AvatarView` this way. Context is not
+persisted, so a later reload or Back does not replay it.
 
 ## Technical Specifications
 
@@ -153,7 +166,7 @@ refresh on `/starmap` will 404 without `-s`-style SPA fallback.
 - [x] Step 4: Convert main menu/hub overlay into `js/views/HomeView.js` (radial nav, Phase 2 shell).
 - [x] Step 5: Convert Star Maps screen into `js/views/StarMapView.js`, with constellation line creation in `mount()` and camera deceleration on entry via `sceneEngine.cameraTo()`.
 - [ ] Step 6: Verify zero page reloads during navigation and confirm memory disposal when toggling between views.
-- [ ] Step 7 (not in original spec): Build `AvatarView.js`, `AcademyChatView.js`, and the other two `HomeView` nav targets — `MissionLogView.js`, `LuxWalletView.js`.
+- [ ] Step 7 (not in original spec, partial): Build `AvatarView.js` **(done, Phase 5)** and `ProfileView.js` **(done, Phase 5)**; still to build — `AcademyChatView.js`, `MissionLogView.js`, `LuxWalletView.js`.
 - [x] Step 8 (not in original spec, partial): Wire real API calls per [FRONTEND_API_INTEGRATION.md](FRONTEND_API_INTEGRATION.md) for Star Maps — `js/starmapApi.js` and `js/avatarApi.js` (built on the shared `js/api.js` client) now do real read+write against the backend for an existing map, per-star mutations, and North Star goal persistence. `constants.js`'s `STAR_DATA`/`CONSTELLATION_CONFIG` remain in use only as the first-time onboarding walkthrough's seed content (no real AI roadmap-generation endpoint exists yet) — a real, logged-in account with a persisted map no longer touches mock data at all.
 
 ## Star Map — STARMAP_SPEC.md alignment

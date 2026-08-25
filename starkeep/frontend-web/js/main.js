@@ -4,6 +4,7 @@ import { Router } from './router.js';
 import { HomeView } from './views/HomeView.js';
 import { StarMapView } from './views/StarMapView.js';
 import { AvatarView } from './views/AvatarView.js';
+import { ProfileView } from './views/ProfileView.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     // 1. Identify mount targets in single-page HTML shell
@@ -26,7 +27,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const routes = {
         home: HomeView,
         starmap: StarMapView,
-        avatar: AvatarView
+        avatar: AvatarView,
+        profile: ProfileView
     };
 
     // 5. Initialize Client-Side SPA Router (History API — pushState/popstate).
@@ -34,9 +36,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     // left in the address bar from a previous in-app navigation (History API
     // routing means e.g. '/starmap' is a real, reloadable URL) — replaceState
     // resets it without adding a spurious history entry.
-    if (window.location.pathname !== '/') {
+    //
+    // The one exception is the archetype quiz sending the user back (DEC-014).
+    // That return is a *full page load* at /avatar?quiz=complete, so the reset
+    // below would discard both the route and the marker before anything could
+    // act on them. Read them first, then let the reset proceed as normal.
+    const returnedFromQuiz =
+        new URLSearchParams(window.location.search).get('quiz') === 'complete';
+    const returnRoute = window.location.pathname.replace(/^\//, '');
+
+    if (window.location.pathname !== '/' || window.location.search) {
         window.history.replaceState({}, '', '/');
     }
+
     const router = new Router(routes, sceneEngine);
-    await router.handleRoute();
+
+    if (returnedFromQuiz && routes[returnRoute]) {
+        // Route guard still applies: if the session lapsed while the user was
+        // on the quiz, Router bounces them to the login gate as usual.
+        await router.navigate(returnRoute, { quizComplete: true });
+    } else {
+        await router.handleRoute();
+    }
 });
